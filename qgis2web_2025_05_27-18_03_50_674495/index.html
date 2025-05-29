@@ -1,0 +1,2781 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-search.css">
+        <link rel="stylesheet" href="css/filter.css">
+<link rel="stylesheet" href="css/nouislider.min.css">
+        <link rel="stylesheet" href="css/leaflet-control-geocoder.Geocoder.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-control-geocoder.Geocoder.js"></script>
+        <script src="js/leaflet-measure.js"></script>
+        <script src="js/leaflet-search.js"></script>
+        <script src="js/tailDT.js"></script>
+<script src="js/nouislider.min.js"></script>
+<script src="js/wNumb.js"></script>
+        <script src="data/lab1_1.js"></script>
+        <script src="data/building_2.js"></script>
+        <script src="data/building_3.js"></script>
+        <script src="data/highway_4.js"></script>
+        <script src="data/highway_5.js"></script>
+        <script src="data/highway_6.js"></script>
+        <script>
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:25, minZoom:2
+        })
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var measureControl = new L.Control.Measure({
+            position: 'topleft',
+            primaryLengthUnit: 'feet',
+            secondaryLengthUnit: 'miles',
+            primaryAreaUnit: 'sqfeet',
+            secondaryAreaUnit: 'sqmiles'
+        });
+        measureControl.addTo(map);
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].innerHTML = '';
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].className += ' fas fa-ruler';
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+            if (bounds_group.getLayers().length) {
+                map.fitBounds(bounds_group.getBounds());
+            }
+        }
+        map.createPane('pane_YandexSatellite_0');
+        map.getPane('pane_YandexSatellite_0').style.zIndex = 400;
+        var layer_YandexSatellite_0 = L.tileLayer('https://core-sat.maps.yandex.net/tiles?l=sat&v=3.1025.0&x={x}&y={y}&z={z}&scale=1&lang=ru_RU', {
+            pane: 'pane_YandexSatellite_0',
+            opacity: 1.0,
+            attribution: '<a href="">Yandex Satellite</a>',
+            minZoom: 2,
+            maxZoom: 25,
+            minNativeZoom: 0,
+            maxNativeZoom: 19
+        });
+        layer_YandexSatellite_0;
+        map.addLayer(layer_YandexSatellite_0);
+        function pop_lab1_1(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['fid'] !== null ? autolinker.link(String(feature.properties['fid']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_lab1_1_0() {
+            return {
+                pane: 'pane_lab1_1',
+                opacity: 1,
+                color: 'rgba(228,26,28,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 4.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_lab1_1');
+        map.getPane('pane_lab1_1').style.zIndex = 401;
+        map.getPane('pane_lab1_1').style['mix-blend-mode'] = 'normal';
+        var layer_lab1_1 = new L.geoJson(json_lab1_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_lab1_1',
+            layerName: 'layer_lab1_1',
+            pane: 'pane_lab1_1',
+            onEachFeature: pop_lab1_1,
+            style: style_lab1_1_0,
+        });
+        bounds_group.addLayer(layer_lab1_1);
+        map.addLayer(layer_lab1_1);
+        function pop_building_2(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['full_id'] !== null ? autolinker.link(String(feature.properties['full_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['osm_id'] !== null ? autolinker.link(String(feature.properties['osm_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['osm_type'] !== null ? autolinker.link(String(feature.properties['osm_type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['barrier'] !== null ? autolinker.link(String(feature.properties['barrier']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ref'] !== null ? autolinker.link(String(feature.properties['ref']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['access'] !== null ? autolinker.link(String(feature.properties['access']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['entrance'] !== null ? autolinker.link(String(feature.properties['entrance']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['surveillance:type'] !== null ? autolinker.link(String(feature.properties['surveillance:type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['man_made'] !== null ? autolinker.link(String(feature.properties['man_made']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_building_2_0() {
+            return {
+                pane: 'pane_building_2',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(183,72,75,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_building_2');
+        map.getPane('pane_building_2').style.zIndex = 402;
+        map.getPane('pane_building_2').style['mix-blend-mode'] = 'normal';
+        var layer_building_2 = new L.geoJson(json_building_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_building_2',
+            layerName: 'layer_building_2',
+            pane: 'pane_building_2',
+            onEachFeature: pop_building_2,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_building_2_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_building_2);
+        map.addLayer(layer_building_2);
+        function pop_building_3(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['full_id'] !== null ? autolinker.link(String(feature.properties['full_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['osm_id'] !== null ? autolinker.link(String(feature.properties['osm_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['osm_type'] !== null ? autolinker.link(String(feature.properties['osm_type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['building'] !== null ? autolinker.link(String(feature.properties['building']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['layer'] !== null ? autolinker.link(String(feature.properties['layer']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['source:addr'] !== null ? autolinker.link(String(feature.properties['source:addr']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['aeroway'] !== null ? autolinker.link(String(feature.properties['aeroway']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['capacity'] !== null ? autolinker.link(String(feature.properties['capacity']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['brand:wikidata'] !== null ? autolinker.link(String(feature.properties['brand:wikidata']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['brand:en'] !== null ? autolinker.link(String(feature.properties['brand:en']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['brand'] !== null ? autolinker.link(String(feature.properties['brand']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['construction'] !== null ? autolinker.link(String(feature.properties['construction']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['start_date'] !== null ? autolinker.link(String(feature.properties['start_date']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['office'] !== null ? autolinker.link(String(feature.properties['office']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['power'] !== null ? autolinker.link(String(feature.properties['power']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['emergency'] !== null ? autolinker.link(String(feature.properties['emergency']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['roof:height'] !== null ? autolinker.link(String(feature.properties['roof:height']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['parking'] !== null ? autolinker.link(String(feature.properties['parking']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['access'] !== null ? autolinker.link(String(feature.properties['access']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:ja'] !== null ? autolinker.link(String(feature.properties['name:ja']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['height'] !== null ? autolinker.link(String(feature.properties['height']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['leisure'] !== null ? autolinker.link(String(feature.properties['leisure']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['shop'] !== null ? autolinker.link(String(feature.properties['shop']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['roof:colour'] !== null ? autolinker.link(String(feature.properties['roof:colour']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['religion'] !== null ? autolinker.link(String(feature.properties['religion']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:en'] !== null ? autolinker.link(String(feature.properties['name:en']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['denomination'] !== null ? autolinker.link(String(feature.properties['denomination']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['building:colour'] !== null ? autolinker.link(String(feature.properties['building:colour']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['alt_name'] !== null ? autolinker.link(String(feature.properties['alt_name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['roof:shape'] !== null ? autolinker.link(String(feature.properties['roof:shape']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['opening_hours'] !== null ? autolinker.link(String(feature.properties['opening_hours']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['contact:phone'] !== null ? autolinker.link(String(feature.properties['contact:phone']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['contact:email'] !== null ? autolinker.link(String(feature.properties['contact:email']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['roof:levels'] !== null ? autolinker.link(String(feature.properties['roof:levels']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr:country'] !== null ? autolinker.link(String(feature.properties['addr:country']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['cinema:3D'] !== null ? autolinker.link(String(feature.properties['cinema:3D']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr2:street'] !== null ? autolinker.link(String(feature.properties['addr2:street']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr2:housenumber'] !== null ? autolinker.link(String(feature.properties['addr2:housenumber']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['website'] !== null ? autolinker.link(String(feature.properties['website']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['phone'] !== null ? autolinker.link(String(feature.properties['phone']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['healthcare'] !== null ? autolinker.link(String(feature.properties['healthcare']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['email'] !== null ? autolinker.link(String(feature.properties['email']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['amenity'] !== null ? autolinker.link(String(feature.properties['amenity']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:ru'] !== null ? autolinker.link(String(feature.properties['name:ru']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['type'] !== null ? autolinker.link(String(feature.properties['type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['building:material'] !== null ? autolinker.link(String(feature.properties['building:material']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['building:levels'] !== null ? autolinker.link(String(feature.properties['building:levels']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr:street'] !== null ? autolinker.link(String(feature.properties['addr:street']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr:postcode'] !== null ? autolinker.link(String(feature.properties['addr:postcode']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr:housenumber'] !== null ? autolinker.link(String(feature.properties['addr:housenumber']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr:city'] !== null ? autolinker.link(String(feature.properties['addr:city']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['address'] !== null ? autolinker.link(String(feature.properties['address']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_building_3_0() {
+            return {
+                pane: 'pane_building_3',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(243,166,178,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_building_3');
+        map.getPane('pane_building_3').style.zIndex = 403;
+        map.getPane('pane_building_3').style['mix-blend-mode'] = 'normal';
+        var layer_building_3 = new L.geoJson(json_building_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_building_3',
+            layerName: 'layer_building_3',
+            pane: 'pane_building_3',
+            onEachFeature: pop_building_3,
+            style: style_building_3_0,
+        });
+        bounds_group.addLayer(layer_building_3);
+        map.addLayer(layer_building_3);
+        function pop_highway_4(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['full_id'] !== null ? autolinker.link(String(feature.properties['full_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['osm_id'] !== null ? autolinker.link(String(feature.properties['osm_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['osm_type'] !== null ? autolinker.link(String(feature.properties['osm_type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['highway'] !== null ? autolinker.link(String(feature.properties['highway']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['material'] !== null ? autolinker.link(String(feature.properties['material']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['bollard'] !== null ? autolinker.link(String(feature.properties['bollard']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['direction'] !== null ? autolinker.link(String(feature.properties['direction']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['check_date:crossing'] !== null ? autolinker.link(String(feature.properties['check_date:crossing']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['lift_gate:type'] !== null ? autolinker.link(String(feature.properties['lift_gate:type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['noexit'] !== null ? autolinker.link(String(feature.properties['noexit']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['traffic_signals:vibration'] !== null ? autolinker.link(String(feature.properties['traffic_signals:vibration']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['tourism'] !== null ? autolinker.link(String(feature.properties['tourism']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['leisure'] !== null ? autolinker.link(String(feature.properties['leisure']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['surface'] !== null ? autolinker.link(String(feature.properties['surface']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['access'] !== null ? autolinker.link(String(feature.properties['access']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['lit'] !== null ? autolinker.link(String(feature.properties['lit']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['traffic_calming'] !== null ? autolinker.link(String(feature.properties['traffic_calming']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['locked'] !== null ? autolinker.link(String(feature.properties['locked']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['kerb'] !== null ? autolinker.link(String(feature.properties['kerb']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['motor_vehicle'] !== null ? autolinker.link(String(feature.properties['motor_vehicle']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['foot'] !== null ? autolinker.link(String(feature.properties['foot']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['bicycle'] !== null ? autolinker.link(String(feature.properties['bicycle']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['barrier'] !== null ? autolinker.link(String(feature.properties['barrier']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['traffic_signals:sound'] !== null ? autolinker.link(String(feature.properties['traffic_signals:sound']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['button_operated'] !== null ? autolinker.link(String(feature.properties['button_operated']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['crossing:barrier'] !== null ? autolinker.link(String(feature.properties['crossing:barrier']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['supervised'] !== null ? autolinker.link(String(feature.properties['supervised']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['railway'] !== null ? autolinker.link(String(feature.properties['railway']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['source_ref'] !== null ? autolinker.link(String(feature.properties['source_ref']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['shelter'] !== null ? autolinker.link(String(feature.properties['shelter']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['bin'] !== null ? autolinker.link(String(feature.properties['bin']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['bench'] !== null ? autolinker.link(String(feature.properties['bench']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['trolleybus'] !== null ? autolinker.link(String(feature.properties['trolleybus']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['public_transport'] !== null ? autolinker.link(String(feature.properties['public_transport']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:ru'] !== null ? autolinker.link(String(feature.properties['name:ru']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:en'] !== null ? autolinker.link(String(feature.properties['name:en']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['bus'] !== null ? autolinker.link(String(feature.properties['bus']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['crossing:markings'] !== null ? autolinker.link(String(feature.properties['crossing:markings']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['crossing:island'] !== null ? autolinker.link(String(feature.properties['crossing:island']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['traffic_signals'] !== null ? autolinker.link(String(feature.properties['traffic_signals']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['tactile_paving'] !== null ? autolinker.link(String(feature.properties['tactile_paving']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['crossing'] !== null ? autolinker.link(String(feature.properties['crossing']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_highway_4_0() {
+            return {
+                pane: 'pane_highway_4',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(145,82,45,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_highway_4');
+        map.getPane('pane_highway_4').style.zIndex = 404;
+        map.getPane('pane_highway_4').style['mix-blend-mode'] = 'normal';
+        var layer_highway_4 = new L.geoJson(json_highway_4, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_highway_4',
+            layerName: 'layer_highway_4',
+            pane: 'pane_highway_4',
+            onEachFeature: pop_highway_4,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_highway_4_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_highway_4);
+        map.addLayer(layer_highway_4);
+        function pop_highway_5(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['full_id'] !== null ? autolinker.link(String(feature.properties['full_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['osm_id'] !== null ? autolinker.link(String(feature.properties['osm_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['osm_type'] !== null ? autolinker.link(String(feature.properties['osm_type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['highway'] !== null ? autolinker.link(String(feature.properties['highway']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['bicycle'] !== null ? autolinker.link(String(feature.properties['bicycle']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['level'] !== null ? autolinker.link(String(feature.properties['level']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['tactile_paving'] !== null ? autolinker.link(String(feature.properties['tactile_paving']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['step_count'] !== null ? autolinker.link(String(feature.properties['step_count']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ramp'] !== null ? autolinker.link(String(feature.properties['ramp']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['handrail'] !== null ? autolinker.link(String(feature.properties['handrail']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['incline'] !== null ? autolinker.link(String(feature.properties['incline']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['traffic_signals:vibration'] !== null ? autolinker.link(String(feature.properties['traffic_signals:vibration']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['button_operated'] !== null ? autolinker.link(String(feature.properties['button_operated']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['crossing:island'] !== null ? autolinker.link(String(feature.properties['crossing:island']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['source:maxspeed'] !== null ? autolinker.link(String(feature.properties['source:maxspeed']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['maxspeed:backward'] !== null ? autolinker.link(String(feature.properties['maxspeed:backward']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['tunnel'] !== null ? autolinker.link(String(feature.properties['tunnel']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['embankment'] !== null ? autolinker.link(String(feature.properties['embankment']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['horse'] !== null ? autolinker.link(String(feature.properties['horse']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['maxheight'] !== null ? autolinker.link(String(feature.properties['maxheight']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['width'] !== null ? autolinker.link(String(feature.properties['width']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['foot'] !== null ? autolinker.link(String(feature.properties['foot']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['proposed'] !== null ? autolinker.link(String(feature.properties['proposed']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['crossing:markings'] !== null ? autolinker.link(String(feature.properties['crossing:markings']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['crossing'] !== null ? autolinker.link(String(feature.properties['crossing']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['footway'] !== null ? autolinker.link(String(feature.properties['footway']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['turn:lanes:forward'] !== null ? autolinker.link(String(feature.properties['turn:lanes:forward']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['covered'] !== null ? autolinker.link(String(feature.properties['covered']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['sidewalk:right'] !== null ? autolinker.link(String(feature.properties['sidewalk:right']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['sidewalk:left'] !== null ? autolinker.link(String(feature.properties['sidewalk:left']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['layer'] !== null ? autolinker.link(String(feature.properties['layer']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['bridge'] !== null ? autolinker.link(String(feature.properties['bridge']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['smoothness'] !== null ? autolinker.link(String(feature.properties['smoothness']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['motor_vehicle'] !== null ? autolinker.link(String(feature.properties['motor_vehicle']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['tracktype'] !== null ? autolinker.link(String(feature.properties['tracktype']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['old_name:ru'] !== null ? autolinker.link(String(feature.properties['old_name:ru']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['old_name:en'] !== null ? autolinker.link(String(feature.properties['old_name:en']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['old_name'] !== null ? autolinker.link(String(feature.properties['old_name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['maxspeed:type'] !== null ? autolinker.link(String(feature.properties['maxspeed:type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['service'] !== null ? autolinker.link(String(feature.properties['service']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['access'] !== null ? autolinker.link(String(feature.properties['access']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:zh'] !== null ? autolinker.link(String(feature.properties['name:zh']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:etymology:wikidata'] !== null ? autolinker.link(String(feature.properties['name:etymology:wikidata']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['trolley_wire'] !== null ? autolinker.link(String(feature.properties['trolley_wire']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['surface'] !== null ? autolinker.link(String(feature.properties['surface']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['sidewalk'] !== null ? autolinker.link(String(feature.properties['sidewalk']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['shoulder'] !== null ? autolinker.link(String(feature.properties['shoulder']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['oneway'] !== null ? autolinker.link(String(feature.properties['oneway']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['maxspeed'] !== null ? autolinker.link(String(feature.properties['maxspeed']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['lit'] !== null ? autolinker.link(String(feature.properties['lit']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['lanes'] !== null ? autolinker.link(String(feature.properties['lanes']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['postal_code'] !== null ? autolinker.link(String(feature.properties['postal_code']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:ru'] !== null ? autolinker.link(String(feature.properties['name:ru']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:en'] !== null ? autolinker.link(String(feature.properties['name:en']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_highway_5_0() {
+            return {
+                pane: 'pane_highway_5',
+                opacity: 1,
+                color: 'rgba(152,125,183,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_highway_5');
+        map.getPane('pane_highway_5').style.zIndex = 405;
+        map.getPane('pane_highway_5').style['mix-blend-mode'] = 'normal';
+        var layer_highway_5 = new L.geoJson(json_highway_5, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_highway_5',
+            layerName: 'layer_highway_5',
+            pane: 'pane_highway_5',
+            onEachFeature: pop_highway_5,
+            style: style_highway_5_0,
+        });
+        bounds_group.addLayer(layer_highway_5);
+        map.addLayer(layer_highway_5);
+        function pop_highway_6(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['full_id'] !== null ? autolinker.link(String(feature.properties['full_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['osm_id'] !== null ? autolinker.link(String(feature.properties['osm_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['osm_type'] !== null ? autolinker.link(String(feature.properties['osm_type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['highway'] !== null ? autolinker.link(String(feature.properties['highway']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_highway_6_0() {
+            return {
+                pane: 'pane_highway_6',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(196,60,57,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_highway_6');
+        map.getPane('pane_highway_6').style.zIndex = 406;
+        map.getPane('pane_highway_6').style['mix-blend-mode'] = 'normal';
+        var layer_highway_6 = new L.geoJson(json_highway_6, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_highway_6',
+            layerName: 'layer_highway_6',
+            pane: 'pane_highway_6',
+            onEachFeature: pop_highway_6,
+            style: style_highway_6_0,
+        });
+        bounds_group.addLayer(layer_highway_6);
+        map.addLayer(layer_highway_6);
+        var osmGeocoder = new L.Control.Geocoder({
+            collapsed: true,
+            position: 'topleft',
+            text: 'Search',
+            title: 'Testing'
+        }).addTo(map);
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .className += ' fa fa-search';
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .title += 'Search for a place';
+        setBounds();
+        map.addControl(new L.Control.Search({
+            layer: layer_building_3,
+            initial: false,
+            hideMarkerOnCollapse: true,
+            propertyName: 'address'}));
+        document.getElementsByClassName('search-button')[0].className +=
+         ' fa fa-binoculars';
+        var mapDiv = document.getElementById('map');
+        var row = document.createElement('div');
+        row.className="row";
+        row.id="all";
+        row.style.height = "100%";
+        var col1 = document.createElement('div');
+        col1.className="col9";
+        col1.id = "mapWindow";
+        col1.style.height = "99%";
+        col1.style.width = "80%";
+        col1.style.display = "inline-block";
+        var col2 = document.createElement('div');
+        col2.className="col3";
+        col2.id = "menu";
+        col2.style.display = "inline-block";
+        mapDiv.parentNode.insertBefore(row, mapDiv);
+        document.getElementById("all").appendChild(col1);
+        document.getElementById("all").appendChild(col2);
+        col1.appendChild(mapDiv)
+        var Filters = {"address": "str"};
+        function filterFunc() {
+          map.eachLayer(function(lyr){
+          if ("options" in lyr && "dataVar" in lyr["options"]){
+            features = this[lyr["options"]["dataVar"]].features.slice(0);
+            try{
+              for (key in Filters){
+                keyS = key.replace(/[^a-zA-Z0-9_]/g, "")
+                if (Filters[key] == "str" || Filters[key] == "bool"){
+                  var selection = [];
+                  var options = document.getElementById("sel_" + keyS).options
+                  for (var i=0; i < options.length; i++) {
+                    if (options[i].selected) selection.push(options[i].value);
+                  }
+                    try{
+                      if (key in features[0].properties){
+                        for (i = features.length - 1;
+                          i >= 0; --i){
+                          if (selection.indexOf(
+                          features[i].properties[key])<0
+                          && selection.length>0) {
+                          features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                  }
+                }
+                if (Filters[key] == "int"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (parseInt(features[i].properties[key])
+                          < sliderVals[0]
+                          || parseInt(features[i].properties[key])
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "real"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (features[i].properties[key]
+                          < sliderVals[0]
+                          || features[i].properties[key]
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "date"
+                  || Filters[key] == "datetime"
+                  || Filters[key] == "time"){
+                  try{
+                    if (key in features[0].properties){
+                      HTMLkey = key.replace(/[&\/\\#,+()$~%.'":*?<>{} ]/g, '');
+                      startdate = document.getElementById("dat_" +
+                        HTMLkey + "_date1").value.replace(" ", "T");
+                      enddate = document.getElementById("dat_" +
+                        HTMLkey + "_date2").value.replace(" ", "T");
+                      for (i = features.length - 1; i >= 0; --i){
+                        if (features[i].properties[key] < startdate
+                          || features[i].properties[key] > enddate){
+                          features.splice(i,1);
+                        }
+                      }
+                    }
+                  } catch(err){
+                  }
+                }
+              }
+            } catch(err){
+            }
+          this[lyr["options"]["layerName"]].clearLayers();
+          this[lyr["options"]["layerName"]].addData(features);
+          }
+          })
+        }
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_address = document.createElement('div');
+            div_address.id = "div_address";
+            div_address.className= "filterselect";
+            document.getElementById("menu").appendChild(div_address);
+            sel_address = document.createElement('select');
+            sel_address.multiple = true;
+            sel_address.size = 10;
+            sel_address.id = "sel_address";
+            var address_options_str = "<option value='' unselected></option>";
+            sel_address.onchange = function(){filterFunc()};
+            address_options_str  += '<option value="1-й Водяной переулок 10">1-й Водяной переулок 10</option>';
+            address_options_str  += '<option value="1-й Водяной переулок 12">1-й Водяной переулок 12</option>';
+            address_options_str  += '<option value="1-й Водяной переулок 2">1-й Водяной переулок 2</option>';
+            address_options_str  += '<option value="1-й Водяной переулок 3">1-й Водяной переулок 3</option>';
+            address_options_str  += '<option value="1-й Водяной переулок 4">1-й Водяной переулок 4</option>';
+            address_options_str  += '<option value="1-й Водяной переулок 5">1-й Водяной переулок 5</option>';
+            address_options_str  += '<option value="1-й Водяной переулок 6">1-й Водяной переулок 6</option>';
+            address_options_str  += '<option value="1-й Водяной переулок 7">1-й Водяной переулок 7</option>';
+            address_options_str  += '<option value="1-й Водяной переулок 8">1-й Водяной переулок 8</option>';
+            address_options_str  += '<option value="1-й Сплавной переулок 5">1-й Сплавной переулок 5</option>';
+            address_options_str  += '<option value="1-й Сплавной переулок 5А">1-й Сплавной переулок 5А</option>';
+            address_options_str  += '<option value="1-й Сплавной переулок 9">1-й Сплавной переулок 9</option>';
+            address_options_str  += '<option value="2-й Водяной переулок 1">2-й Водяной переулок 1</option>';
+            address_options_str  += '<option value="2-й Водяной переулок 2">2-й Водяной переулок 2</option>';
+            address_options_str  += '<option value="2-й Водяной переулок 3">2-й Водяной переулок 3</option>';
+            address_options_str  += '<option value="2-й Водяной переулок 4">2-й Водяной переулок 4</option>';
+            address_options_str  += '<option value="2-й Водяной переулок 5">2-й Водяной переулок 5</option>';
+            address_options_str  += '<option value="2-й Водяной переулок 6">2-й Водяной переулок 6</option>';
+            address_options_str  += '<option value="2-й Сплавной переулок 11">2-й Сплавной переулок 11</option>';
+            address_options_str  += '<option value="2-й Сплавной переулок 11А">2-й Сплавной переулок 11А</option>';
+            address_options_str  += '<option value="2-й Сплавной переулок 13">2-й Сплавной переулок 13</option>';
+            address_options_str  += '<option value="2-й Сплавной переулок 13А">2-й Сплавной переулок 13А</option>';
+            address_options_str  += '<option value="2-й Сплавной переулок 2">2-й Сплавной переулок 2</option>';
+            address_options_str  += '<option value="2-й Сплавной переулок 3">2-й Сплавной переулок 3</option>';
+            address_options_str  += '<option value="2-й Сплавной переулок 4">2-й Сплавной переулок 4</option>';
+            address_options_str  += '<option value="2-й Сплавной переулок 5">2-й Сплавной переулок 5</option>';
+            address_options_str  += '<option value="2-й Сплавной переулок 6">2-й Сплавной переулок 6</option>';
+            address_options_str  += '<option value="2-й Сплавной переулок 7">2-й Сплавной переулок 7</option>';
+            address_options_str  += '<option value="2-й Сплавной переулок 9">2-й Сплавной переулок 9</option>';
+            address_options_str  += '<option value="3-й Сплавной переулок 2">3-й Сплавной переулок 2</option>';
+            address_options_str  += '<option value="3-й Сплавной переулок 3">3-й Сплавной переулок 3</option>';
+            address_options_str  += '<option value="3-й Сплавной переулок 3А">3-й Сплавной переулок 3А</option>';
+            address_options_str  += '<option value="3-й Сплавной переулок 3В">3-й Сплавной переулок 3В</option>';
+            address_options_str  += '<option value="3-й Сплавной переулок 4">3-й Сплавной переулок 4</option>';
+            address_options_str  += '<option value="3-й Сплавной переулок 6">3-й Сплавной переулок 6</option>';
+            address_options_str  += '<option value="3-й Сплавной переулок 6А">3-й Сплавной переулок 6А</option>';
+            address_options_str  += '<option value="3-й Сплавной переулок 8">3-й Сплавной переулок 8</option>';
+            address_options_str  += '<option value="3-й Сплавной переулок 8А">3-й Сплавной переулок 8А</option>';
+            address_options_str  += '<option value="Баранчуковский переулок 10">Баранчуковский переулок 10</option>';
+            address_options_str  += '<option value="Баранчуковский переулок 12">Баранчуковский переулок 12</option>';
+            address_options_str  += '<option value="Баранчуковский переулок 14">Баранчуковский переулок 14</option>';
+            address_options_str  += '<option value="Баранчуковский переулок 15">Баранчуковский переулок 15</option>';
+            address_options_str  += '<option value="Баранчуковский переулок 19">Баранчуковский переулок 19</option>';
+            address_options_str  += '<option value="Баранчуковский переулок 21">Баранчуковский переулок 21</option>';
+            address_options_str  += '<option value="Баранчуковский переулок 23">Баранчуковский переулок 23</option>';
+            address_options_str  += '<option value="Баранчуковский переулок 31">Баранчуковский переулок 31</option>';
+            address_options_str  += '<option value="Баранчуковский переулок 31А">Баранчуковский переулок 31А</option>';
+            address_options_str  += '<option value="Баранчуковский переулок 33А">Баранчуковский переулок 33А</option>';
+            address_options_str  += '<option value="Баранчуковский переулок 35">Баранчуковский переулок 35</option>';
+            address_options_str  += '<option value="Баранчуковский переулок 37">Баранчуковский переулок 37</option>';
+            address_options_str  += '<option value="Баранчуковский переулок 4">Баранчуковский переулок 4</option>';
+            address_options_str  += '<option value="Баранчуковский переулок 41">Баранчуковский переулок 41</option>';
+            address_options_str  += '<option value="Баранчуковский переулок 43">Баранчуковский переулок 43</option>';
+            address_options_str  += '<option value="Баранчуковский переулок 8">Баранчуковский переулок 8</option>';
+            address_options_str  += '<option value="Баранчуковский переулок 8А">Баранчуковский переулок 8А</option>';
+            address_options_str  += '<option value="Бердская улица 1">Бердская улица 1</option>';
+            address_options_str  += '<option value="Бердская улица 11/1">Бердская улица 11/1</option>';
+            address_options_str  += '<option value="Бердская улица 11А">Бердская улица 11А</option>';
+            address_options_str  += '<option value="Бердская улица 12А">Бердская улица 12А</option>';
+            address_options_str  += '<option value="Бердская улица 12А с1">Бердская улица 12А с1</option>';
+            address_options_str  += '<option value="Бердская улица 12А с4">Бердская улица 12А с4</option>';
+            address_options_str  += '<option value="Бердская улица 13">Бердская улица 13</option>';
+            address_options_str  += '<option value="Бердская улица 14/1">Бердская улица 14/1</option>';
+            address_options_str  += '<option value="Бердская улица 14/2">Бердская улица 14/2</option>';
+            address_options_str  += '<option value="Бердская улица 16 с1">Бердская улица 16 с1</option>';
+            address_options_str  += '<option value="Бердская улица 16А">Бердская улица 16А</option>';
+            address_options_str  += '<option value="Бердская улица 17">Бердская улица 17</option>';
+            address_options_str  += '<option value="Бердская улица 18">Бердская улица 18</option>';
+            address_options_str  += '<option value="Бердская улица 19">Бердская улица 19</option>';
+            address_options_str  += '<option value="Бердская улица 19А">Бердская улица 19А</option>';
+            address_options_str  += '<option value="Бердская улица 2">Бердская улица 2</option>';
+            address_options_str  += '<option value="Бердская улица 20">Бердская улица 20</option>';
+            address_options_str  += '<option value="Бердская улица 20 с1">Бердская улица 20 с1</option>';
+            address_options_str  += '<option value="Бердская улица 20 с2">Бердская улица 20 с2</option>';
+            address_options_str  += '<option value="Бердская улица 20 с3">Бердская улица 20 с3</option>';
+            address_options_str  += '<option value="Бердская улица 20/1">Бердская улица 20/1</option>';
+            address_options_str  += '<option value="Бердская улица 20/1 с1">Бердская улица 20/1 с1</option>';
+            address_options_str  += '<option value="Бердская улица 21">Бердская улица 21</option>';
+            address_options_str  += '<option value="Бердская улица 21 с1">Бердская улица 21 с1</option>';
+            address_options_str  += '<option value="Бердская улица 22">Бердская улица 22</option>';
+            address_options_str  += '<option value="Бердская улица 22/1">Бердская улица 22/1</option>';
+            address_options_str  += '<option value="Бердская улица 22/2">Бердская улица 22/2</option>';
+            address_options_str  += '<option value="Бердская улица 22/3">Бердская улица 22/3</option>';
+            address_options_str  += '<option value="Бердская улица 22А">Бердская улица 22А</option>';
+            address_options_str  += '<option value="Бердская улица 23">Бердская улица 23</option>';
+            address_options_str  += '<option value="Бердская улица 27">Бердская улица 27</option>';
+            address_options_str  += '<option value="Бердская улица 27 с1">Бердская улица 27 с1</option>';
+            address_options_str  += '<option value="Бердская улица 27 с10">Бердская улица 27 с10</option>';
+            address_options_str  += '<option value="Бердская улица 27 с2">Бердская улица 27 с2</option>';
+            address_options_str  += '<option value="Бердская улица 27 с3">Бердская улица 27 с3</option>';
+            address_options_str  += '<option value="Бердская улица 27 с5">Бердская улица 27 с5</option>';
+            address_options_str  += '<option value="Бердская улица 27 с6">Бердская улица 27 с6</option>';
+            address_options_str  += '<option value="Бердская улица 27 с7">Бердская улица 27 с7</option>';
+            address_options_str  += '<option value="Бердская улица 27 с8">Бердская улица 27 с8</option>';
+            address_options_str  += '<option value="Бердская улица 27/1">Бердская улица 27/1</option>';
+            address_options_str  += '<option value="Бердская улица 27/3">Бердская улица 27/3</option>';
+            address_options_str  += '<option value="Бердская улица 27/4">Бердская улица 27/4</option>';
+            address_options_str  += '<option value="Бердская улица 27А">Бердская улица 27А</option>';
+            address_options_str  += '<option value="Бердская улица 27Б">Бердская улица 27Б</option>';
+            address_options_str  += '<option value="Бердская улица 27В">Бердская улица 27В</option>';
+            address_options_str  += '<option value="Бердская улица 29">Бердская улица 29</option>';
+            address_options_str  += '<option value="Бердская улица 3">Бердская улица 3</option>';
+            address_options_str  += '<option value="Бердская улица 31А">Бердская улица 31А</option>';
+            address_options_str  += '<option value="Бердская улица 31Б">Бердская улица 31Б</option>';
+            address_options_str  += '<option value="Бердская улица 33">Бердская улица 33</option>';
+            address_options_str  += '<option value="Бердская улица 33 с1">Бердская улица 33 с1</option>';
+            address_options_str  += '<option value="Бердская улица 35">Бердская улица 35</option>';
+            address_options_str  += '<option value="Бердская улица 35А">Бердская улица 35А</option>';
+            address_options_str  += '<option value="Бердская улица 39">Бердская улица 39</option>';
+            address_options_str  += '<option value="Бердская улица 5">Бердская улица 5</option>';
+            address_options_str  += '<option value="Бердская улица 9">Бердская улица 9</option>';
+            address_options_str  += '<option value="Бердская улица 9А">Бердская улица 9А</option>';
+            address_options_str  += '<option value="Береговая улица 10">Береговая улица 10</option>';
+            address_options_str  += '<option value="Береговая улица 10/1">Береговая улица 10/1</option>';
+            address_options_str  += '<option value="Береговая улица 11">Береговая улица 11</option>';
+            address_options_str  += '<option value="Береговая улица 13">Береговая улица 13</option>';
+            address_options_str  += '<option value="Береговая улица 15">Береговая улица 15</option>';
+            address_options_str  += '<option value="Береговая улица 17">Береговая улица 17</option>';
+            address_options_str  += '<option value="Береговая улица 18">Береговая улица 18</option>';
+            address_options_str  += '<option value="Береговая улица 19">Береговая улица 19</option>';
+            address_options_str  += '<option value="Береговая улица 21">Береговая улица 21</option>';
+            address_options_str  += '<option value="Береговая улица 23">Береговая улица 23</option>';
+            address_options_str  += '<option value="Береговая улица 25">Береговая улица 25</option>';
+            address_options_str  += '<option value="Береговая улица 27">Береговая улица 27</option>';
+            address_options_str  += '<option value="Береговая улица 3">Береговая улица 3</option>';
+            address_options_str  += '<option value="Береговая улица 5">Береговая улица 5</option>';
+            address_options_str  += '<option value="Береговая улица 6">Береговая улица 6</option>';
+            address_options_str  += '<option value="Береговая улица 7">Береговая улица 7</option>';
+            address_options_str  += '<option value="Береговая улица 8">Береговая улица 8</option>';
+            address_options_str  += '<option value="Береговая улица 9">Береговая улица 9</option>';
+            address_options_str  += '<option value="Большая Подгорная улица 38">Большая Подгорная улица 38</option>';
+            address_options_str  += '<option value="Большая Подгорная улица 40">Большая Подгорная улица 40</option>';
+            address_options_str  += '<option value="Большая Подгорная улица 42">Большая Подгорная улица 42</option>';
+            address_options_str  += '<option value="Большая Подгорная улица 46">Большая Подгорная улица 46</option>';
+            address_options_str  += '<option value="Большая Подгорная улица 48">Большая Подгорная улица 48</option>';
+            address_options_str  += '<option value="Большая Подгорная улица 49">Большая Подгорная улица 49</option>';
+            address_options_str  += '<option value="Большая Подгорная улица 52">Большая Подгорная улица 52</option>';
+            address_options_str  += '<option value="Большая Подгорная улица 54">Большая Подгорная улица 54</option>';
+            address_options_str  += '<option value="Большая Подгорная улица 66">Большая Подгорная улица 66</option>';
+            address_options_str  += '<option value="Большая Подгорная улица 70">Большая Подгорная улица 70</option>';
+            address_options_str  += '<option value="Большая Подгорная улица 76">Большая Подгорная улица 76</option>';
+            address_options_str  += '<option value="Большая Подгорная улица 90">Большая Подгорная улица 90</option>';
+            address_options_str  += '<option value="Водяная улица 10">Водяная улица 10</option>';
+            address_options_str  += '<option value="Водяная улица 11">Водяная улица 11</option>';
+            address_options_str  += '<option value="Водяная улица 13">Водяная улица 13</option>';
+            address_options_str  += '<option value="Водяная улица 15">Водяная улица 15</option>';
+            address_options_str  += '<option value="Водяная улица 15/1">Водяная улица 15/1</option>';
+            address_options_str  += '<option value="Водяная улица 16">Водяная улица 16</option>';
+            address_options_str  += '<option value="Водяная улица 16 с2">Водяная улица 16 с2</option>';
+            address_options_str  += '<option value="Водяная улица 17">Водяная улица 17</option>';
+            address_options_str  += '<option value="Водяная улица 18 с6">Водяная улица 18 с6</option>';
+            address_options_str  += '<option value="Водяная улица 18А">Водяная улица 18А</option>';
+            address_options_str  += '<option value="Водяная улица 19">Водяная улица 19</option>';
+            address_options_str  += '<option value="Водяная улица 21">Водяная улица 21</option>';
+            address_options_str  += '<option value="Водяная улица 22">Водяная улица 22</option>';
+            address_options_str  += '<option value="Водяная улица 23">Водяная улица 23</option>';
+            address_options_str  += '<option value="Водяная улица 23А">Водяная улица 23А</option>';
+            address_options_str  += '<option value="Водяная улица 23Б">Водяная улица 23Б</option>';
+            address_options_str  += '<option value="Водяная улица 23В">Водяная улица 23В</option>';
+            address_options_str  += '<option value="Водяная улица 24">Водяная улица 24</option>';
+            address_options_str  += '<option value="Водяная улица 26">Водяная улица 26</option>';
+            address_options_str  += '<option value="Водяная улица 28">Водяная улица 28</option>';
+            address_options_str  += '<option value="Водяная улица 28А">Водяная улица 28А</option>';
+            address_options_str  += '<option value="Водяная улица 29">Водяная улица 29</option>';
+            address_options_str  += '<option value="Водяная улица 30">Водяная улица 30</option>';
+            address_options_str  += '<option value="Водяная улица 30А">Водяная улица 30А</option>';
+            address_options_str  += '<option value="Водяная улица 31">Водяная улица 31</option>';
+            address_options_str  += '<option value="Водяная улица 31/1">Водяная улица 31/1</option>';
+            address_options_str  += '<option value="Водяная улица 32">Водяная улица 32</option>';
+            address_options_str  += '<option value="Водяная улица 33">Водяная улица 33</option>';
+            address_options_str  += '<option value="Водяная улица 34">Водяная улица 34</option>';
+            address_options_str  += '<option value="Водяная улица 35">Водяная улица 35</option>';
+            address_options_str  += '<option value="Водяная улица 36">Водяная улица 36</option>';
+            address_options_str  += '<option value="Водяная улица 36А">Водяная улица 36А</option>';
+            address_options_str  += '<option value="Водяная улица 37">Водяная улица 37</option>';
+            address_options_str  += '<option value="Водяная улица 38">Водяная улица 38</option>';
+            address_options_str  += '<option value="Водяная улица 4">Водяная улица 4</option>';
+            address_options_str  += '<option value="Водяная улица 40">Водяная улица 40</option>';
+            address_options_str  += '<option value="Водяная улица 40/2">Водяная улица 40/2</option>';
+            address_options_str  += '<option value="Водяная улица 40/3">Водяная улица 40/3</option>';
+            address_options_str  += '<option value="Водяная улица 40/4">Водяная улица 40/4</option>';
+            address_options_str  += '<option value="Водяная улица 41">Водяная улица 41</option>';
+            address_options_str  += '<option value="Водяная улица 41/1">Водяная улица 41/1</option>';
+            address_options_str  += '<option value="Водяная улица 41А">Водяная улица 41А</option>';
+            address_options_str  += '<option value="Водяная улица 42">Водяная улица 42</option>';
+            address_options_str  += '<option value="Водяная улица 44">Водяная улица 44</option>';
+            address_options_str  += '<option value="Водяная улица 45">Водяная улица 45</option>';
+            address_options_str  += '<option value="Водяная улица 46">Водяная улица 46</option>';
+            address_options_str  += '<option value="Водяная улица 48">Водяная улица 48</option>';
+            address_options_str  += '<option value="Водяная улица 5">Водяная улица 5</option>';
+            address_options_str  += '<option value="Водяная улица 50">Водяная улица 50</option>';
+            address_options_str  += '<option value="Водяная улица 51">Водяная улица 51</option>';
+            address_options_str  += '<option value="Водяная улица 52">Водяная улица 52</option>';
+            address_options_str  += '<option value="Водяная улица 53">Водяная улица 53</option>';
+            address_options_str  += '<option value="Водяная улица 55">Водяная улица 55</option>';
+            address_options_str  += '<option value="Водяная улица 56">Водяная улица 56</option>';
+            address_options_str  += '<option value="Водяная улица 57">Водяная улица 57</option>';
+            address_options_str  += '<option value="Водяная улица 59">Водяная улица 59</option>';
+            address_options_str  += '<option value="Водяная улица 59 с1">Водяная улица 59 с1</option>';
+            address_options_str  += '<option value="Водяная улица 59 с3">Водяная улица 59 с3</option>';
+            address_options_str  += '<option value="Водяная улица 59 с9">Водяная улица 59 с9</option>';
+            address_options_str  += '<option value="Водяная улица 60">Водяная улица 60</option>';
+            address_options_str  += '<option value="Водяная улица 61">Водяная улица 61</option>';
+            address_options_str  += '<option value="Водяная улица 61А">Водяная улица 61А</option>';
+            address_options_str  += '<option value="Водяная улица 62">Водяная улица 62</option>';
+            address_options_str  += '<option value="Водяная улица 63">Водяная улица 63</option>';
+            address_options_str  += '<option value="Водяная улица 64">Водяная улица 64</option>';
+            address_options_str  += '<option value="Водяная улица 65">Водяная улица 65</option>';
+            address_options_str  += '<option value="Водяная улица 65 с4">Водяная улица 65 с4</option>';
+            address_options_str  += '<option value="Водяная улица 65/1">Водяная улица 65/1</option>';
+            address_options_str  += '<option value="Водяная улица 66">Водяная улица 66</option>';
+            address_options_str  += '<option value="Водяная улица 68">Водяная улица 68</option>';
+            address_options_str  += '<option value="Водяная улица 68А">Водяная улица 68А</option>';
+            address_options_str  += '<option value="Водяная улица 7">Водяная улица 7</option>';
+            address_options_str  += '<option value="Водяная улица 70">Водяная улица 70</option>';
+            address_options_str  += '<option value="Водяная улица 72">Водяная улица 72</option>';
+            address_options_str  += '<option value="Водяная улица 78">Водяная улица 78</option>';
+            address_options_str  += '<option value="Водяная улица 78 с1">Водяная улица 78 с1</option>';
+            address_options_str  += '<option value="Водяная улица 78 с3">Водяная улица 78 с3</option>';
+            address_options_str  += '<option value="Водяная улица 78 с4">Водяная улица 78 с4</option>';
+            address_options_str  += '<option value="Водяная улица 78 с7">Водяная улица 78 с7</option>';
+            address_options_str  += '<option value="Водяная улица 78/1">Водяная улица 78/1</option>';
+            address_options_str  += '<option value="Водяная улица 78А">Водяная улица 78А</option>';
+            address_options_str  += '<option value="Водяная улица 8">Водяная улица 8</option>';
+            address_options_str  += '<option value="Водяная улица 8/1">Водяная улица 8/1</option>';
+            address_options_str  += '<option value="Водяная улица 80">Водяная улица 80</option>';
+            address_options_str  += '<option value="Водяная улица 84">Водяная улица 84</option>';
+            address_options_str  += '<option value="Водяная улица 84 с1">Водяная улица 84 с1</option>';
+            address_options_str  += '<option value="Водяная улица 84/1">Водяная улица 84/1</option>';
+            address_options_str  += '<option value="Водяная улица 86А">Водяная улица 86А</option>';
+            address_options_str  += '<option value="Водяная улица 88">Водяная улица 88</option>';
+            address_options_str  += '<option value="Водяная улица 8А">Водяная улица 8А</option>';
+            address_options_str  += '<option value="Водяная улица 9">Водяная улица 9</option>';
+            address_options_str  += '<option value="Водяная улица 90">Водяная улица 90</option>';
+            address_options_str  += '<option value="Водяная улица 90 с9">Водяная улица 90 с9</option>';
+            address_options_str  += '<option value="Водяная улица 90/10">Водяная улица 90/10</option>';
+            address_options_str  += '<option value="Водяная улица 90/11">Водяная улица 90/11</option>';
+            address_options_str  += '<option value="Водяная улица 90/12">Водяная улица 90/12</option>';
+            address_options_str  += '<option value="Водяная улица 90/5">Водяная улица 90/5</option>';
+            address_options_str  += '<option value="Водяная улица 90/7">Водяная улица 90/7</option>';
+            address_options_str  += '<option value="Водяная улица 90/8">Водяная улица 90/8</option>';
+            address_options_str  += '<option value="Дальне-Ключевская улица 10">Дальне-Ключевская улица 10</option>';
+            address_options_str  += '<option value="Дальне-Ключевская улица 10 с1">Дальне-Ключевская улица 10 с1</option>';
+            address_options_str  += '<option value="Дальне-Ключевская улица 11">Дальне-Ключевская улица 11</option>';
+            address_options_str  += '<option value="Дальне-Ключевская улица 3">Дальне-Ключевская улица 3</option>';
+            address_options_str  += '<option value="Дальне-Ключевская улица 5">Дальне-Ключевская улица 5</option>';
+            address_options_str  += '<option value="Дальне-Ключевская улица 6">Дальне-Ключевская улица 6</option>';
+            address_options_str  += '<option value="Дальне-Ключевская улица 6 с1">Дальне-Ключевская улица 6 с1</option>';
+            address_options_str  += '<option value="Дальне-Ключевская улица 6 с2">Дальне-Ключевская улица 6 с2</option>';
+            address_options_str  += '<option value="Дальне-Ключевская улица 8">Дальне-Ключевская улица 8</option>';
+            address_options_str  += '<option value="Дербышевский переулок 1">Дербышевский переулок 1</option>';
+            address_options_str  += '<option value="Дербышевский переулок 10">Дербышевский переулок 10</option>';
+            address_options_str  += '<option value="Дербышевский переулок 12">Дербышевский переулок 12</option>';
+            address_options_str  += '<option value="Дербышевский переулок 14">Дербышевский переулок 14</option>';
+            address_options_str  += '<option value="Дербышевский переулок 15">Дербышевский переулок 15</option>';
+            address_options_str  += '<option value="Дербышевский переулок 17">Дербышевский переулок 17</option>';
+            address_options_str  += '<option value="Дербышевский переулок 19">Дербышевский переулок 19</option>';
+            address_options_str  += '<option value="Дербышевский переулок 21">Дербышевский переулок 21</option>';
+            address_options_str  += '<option value="Дербышевский переулок 22">Дербышевский переулок 22</option>';
+            address_options_str  += '<option value="Дербышевский переулок 24">Дербышевский переулок 24</option>';
+            address_options_str  += '<option value="Дербышевский переулок 26">Дербышевский переулок 26</option>';
+            address_options_str  += '<option value="Дербышевский переулок 26А">Дербышевский переулок 26А</option>';
+            address_options_str  += '<option value="Дербышевский переулок 26Б">Дербышевский переулок 26Б</option>';
+            address_options_str  += '<option value="Дербышевский переулок 29А">Дербышевский переулок 29А</option>';
+            address_options_str  += '<option value="Дербышевский переулок 30">Дербышевский переулок 30</option>';
+            address_options_str  += '<option value="Дербышевский переулок 31">Дербышевский переулок 31</option>';
+            address_options_str  += '<option value="Дербышевский переулок 33">Дербышевский переулок 33</option>';
+            address_options_str  += '<option value="Дербышевский переулок 5">Дербышевский переулок 5</option>';
+            address_options_str  += '<option value="Дербышевский переулок 6">Дербышевский переулок 6</option>';
+            address_options_str  += '<option value="Дербышевский переулок 7">Дербышевский переулок 7</option>';
+            address_options_str  += '<option value="Дербышевский переулок 8">Дербышевский переулок 8</option>';
+            address_options_str  += '<option value="Дербышевский переулок 9">Дербышевский переулок 9</option>';
+            address_options_str  += '<option value="Заозёрный переулок 1">Заозёрный переулок 1</option>';
+            address_options_str  += '<option value="Заозёрный переулок 1/1">Заозёрный переулок 1/1</option>';
+            address_options_str  += '<option value="Заозёрный переулок 1/2">Заозёрный переулок 1/2</option>';
+            address_options_str  += '<option value="Заозёрный переулок 15">Заозёрный переулок 15</option>';
+            address_options_str  += '<option value="Заозёрный переулок 16">Заозёрный переулок 16</option>';
+            address_options_str  += '<option value="Заозёрный переулок 16/1">Заозёрный переулок 16/1</option>';
+            address_options_str  += '<option value="Заозёрный переулок 16/2">Заозёрный переулок 16/2</option>';
+            address_options_str  += '<option value="Заозёрный переулок 16/3">Заозёрный переулок 16/3</option>';
+            address_options_str  += '<option value="Заозёрный переулок 18">Заозёрный переулок 18</option>';
+            address_options_str  += '<option value="Заозёрный переулок 18А">Заозёрный переулок 18А</option>';
+            address_options_str  += '<option value="Заозёрный переулок 20">Заозёрный переулок 20</option>';
+            address_options_str  += '<option value="Заозёрный переулок 22">Заозёрный переулок 22</option>';
+            address_options_str  += '<option value="Заозёрный переулок 23А">Заозёрный переулок 23А</option>';
+            address_options_str  += '<option value="Заозёрный переулок 27">Заозёрный переулок 27</option>';
+            address_options_str  += '<option value="Заозёрный переулок 3">Заозёрный переулок 3</option>';
+            address_options_str  += '<option value="Заозёрный переулок 30">Заозёрный переулок 30</option>';
+            address_options_str  += '<option value="Заозёрный переулок 3А">Заозёрный переулок 3А</option>';
+            address_options_str  += '<option value="Ижевская улица 10">Ижевская улица 10</option>';
+            address_options_str  += '<option value="Ижевская улица 11">Ижевская улица 11</option>';
+            address_options_str  += '<option value="Ижевская улица 12">Ижевская улица 12</option>';
+            address_options_str  += '<option value="Ижевская улица 13">Ижевская улица 13</option>';
+            address_options_str  += '<option value="Ижевская улица 14">Ижевская улица 14</option>';
+            address_options_str  += '<option value="Ижевская улица 16">Ижевская улица 16</option>';
+            address_options_str  += '<option value="Ижевская улица 18">Ижевская улица 18</option>';
+            address_options_str  += '<option value="Ижевская улица 20">Ижевская улица 20</option>';
+            address_options_str  += '<option value="Ижевская улица 3">Ижевская улица 3</option>';
+            address_options_str  += '<option value="Ижевская улица 4">Ижевская улица 4</option>';
+            address_options_str  += '<option value="Ижевская улица 5">Ижевская улица 5</option>';
+            address_options_str  += '<option value="Ижевская улица 6А">Ижевская улица 6А</option>';
+            address_options_str  += '<option value="Ижевская улица 6Б">Ижевская улица 6Б</option>';
+            address_options_str  += '<option value="Ижевская улица 7">Ижевская улица 7</option>';
+            address_options_str  += '<option value="Ижевская улица 9">Ижевская улица 9</option>';
+            address_options_str  += '<option value="Карповский переулок 12">Карповский переулок 12</option>';
+            address_options_str  += '<option value="Карповский переулок 13">Карповский переулок 13</option>';
+            address_options_str  += '<option value="Карповский переулок 2">Карповский переулок 2</option>';
+            address_options_str  += '<option value="Карповский переулок 22">Карповский переулок 22</option>';
+            address_options_str  += '<option value="Карповский переулок 3">Карповский переулок 3</option>';
+            address_options_str  += '<option value="Карповский переулок 6">Карповский переулок 6</option>';
+            address_options_str  += '<option value="Карповский переулок 6 с1">Карповский переулок 6 с1</option>';
+            address_options_str  += '<option value="Картасный переулок 11">Картасный переулок 11</option>';
+            address_options_str  += '<option value="Картасный переулок 12">Картасный переулок 12</option>';
+            address_options_str  += '<option value="Картасный переулок 14">Картасный переулок 14</option>';
+            address_options_str  += '<option value="Картасный переулок 14А">Картасный переулок 14А</option>';
+            address_options_str  += '<option value="Картасный переулок 15">Картасный переулок 15</option>';
+            address_options_str  += '<option value="Картасный переулок 16">Картасный переулок 16</option>';
+            address_options_str  += '<option value="Картасный переулок 17">Картасный переулок 17</option>';
+            address_options_str  += '<option value="Картасный переулок 18">Картасный переулок 18</option>';
+            address_options_str  += '<option value="Картасный переулок 22">Картасный переулок 22</option>';
+            address_options_str  += '<option value="Картасный переулок 3">Картасный переулок 3</option>';
+            address_options_str  += '<option value="Картасный переулок 5">Картасный переулок 5</option>';
+            address_options_str  += '<option value="Картасный переулок 6">Картасный переулок 6</option>';
+            address_options_str  += '<option value="Картасный переулок 7">Картасный переулок 7</option>';
+            address_options_str  += '<option value="Картасный переулок 8">Картасный переулок 8</option>';
+            address_options_str  += '<option value="Картасный переулок 8А">Картасный переулок 8А</option>';
+            address_options_str  += '<option value="Краснодонская улица 10">Краснодонская улица 10</option>';
+            address_options_str  += '<option value="Краснодонская улица 11">Краснодонская улица 11</option>';
+            address_options_str  += '<option value="Краснодонская улица 11/1">Краснодонская улица 11/1</option>';
+            address_options_str  += '<option value="Краснодонская улица 12">Краснодонская улица 12</option>';
+            address_options_str  += '<option value="Краснодонская улица 14">Краснодонская улица 14</option>';
+            address_options_str  += '<option value="Краснодонская улица 16">Краснодонская улица 16</option>';
+            address_options_str  += '<option value="Краснодонская улица 18">Краснодонская улица 18</option>';
+            address_options_str  += '<option value="Краснодонская улица 22">Краснодонская улица 22</option>';
+            address_options_str  += '<option value="Краснодонская улица 24">Краснодонская улица 24</option>';
+            address_options_str  += '<option value="Краснодонская улица 7">Краснодонская улица 7</option>';
+            address_options_str  += '<option value="Краснодонская улица 8">Краснодонская улица 8</option>';
+            address_options_str  += '<option value="Краснодонская улица 9">Краснодонская улица 9</option>';
+            address_options_str  += '<option value="Краснодонская улица 9/1">Краснодонская улица 9/1</option>';
+            address_options_str  += '<option value="Красный переулок 10">Красный переулок 10</option>';
+            address_options_str  += '<option value="Красный переулок 10А">Красный переулок 10А</option>';
+            address_options_str  += '<option value="Красный переулок 4">Красный переулок 4</option>';
+            address_options_str  += '<option value="Красный переулок 6/1">Красный переулок 6/1</option>';
+            address_options_str  += '<option value="Крепёжная улица 1">Крепёжная улица 1</option>';
+            address_options_str  += '<option value="Крепёжная улица 10">Крепёжная улица 10</option>';
+            address_options_str  += '<option value="Крепёжная улица 10А">Крепёжная улица 10А</option>';
+            address_options_str  += '<option value="Крепёжная улица 11">Крепёжная улица 11</option>';
+            address_options_str  += '<option value="Крепёжная улица 12">Крепёжная улица 12</option>';
+            address_options_str  += '<option value="Крепёжная улица 13">Крепёжная улица 13</option>';
+            address_options_str  += '<option value="Крепёжная улица 14">Крепёжная улица 14</option>';
+            address_options_str  += '<option value="Крепёжная улица 15">Крепёжная улица 15</option>';
+            address_options_str  += '<option value="Крепёжная улица 16">Крепёжная улица 16</option>';
+            address_options_str  += '<option value="Крепёжная улица 17">Крепёжная улица 17</option>';
+            address_options_str  += '<option value="Крепёжная улица 17А">Крепёжная улица 17А</option>';
+            address_options_str  += '<option value="Крепёжная улица 17Б">Крепёжная улица 17Б</option>';
+            address_options_str  += '<option value="Крепёжная улица 18">Крепёжная улица 18</option>';
+            address_options_str  += '<option value="Крепёжная улица 19">Крепёжная улица 19</option>';
+            address_options_str  += '<option value="Крепёжная улица 2">Крепёжная улица 2</option>';
+            address_options_str  += '<option value="Крепёжная улица 20">Крепёжная улица 20</option>';
+            address_options_str  += '<option value="Крепёжная улица 20А">Крепёжная улица 20А</option>';
+            address_options_str  += '<option value="Крепёжная улица 21">Крепёжная улица 21</option>';
+            address_options_str  += '<option value="Крепёжная улица 22">Крепёжная улица 22</option>';
+            address_options_str  += '<option value="Крепёжная улица 22А">Крепёжная улица 22А</option>';
+            address_options_str  += '<option value="Крепёжная улица 23">Крепёжная улица 23</option>';
+            address_options_str  += '<option value="Крепёжная улица 24">Крепёжная улица 24</option>';
+            address_options_str  += '<option value="Крепёжная улица 25">Крепёжная улица 25</option>';
+            address_options_str  += '<option value="Крепёжная улица 29">Крепёжная улица 29</option>';
+            address_options_str  += '<option value="Крепёжная улица 29А">Крепёжная улица 29А</option>';
+            address_options_str  += '<option value="Крепёжная улица 2А">Крепёжная улица 2А</option>';
+            address_options_str  += '<option value="Крепёжная улица 3">Крепёжная улица 3</option>';
+            address_options_str  += '<option value="Крепёжная улица 31">Крепёжная улица 31</option>';
+            address_options_str  += '<option value="Крепёжная улица 4">Крепёжная улица 4</option>';
+            address_options_str  += '<option value="Крепёжная улица 5">Крепёжная улица 5</option>';
+            address_options_str  += '<option value="Крепёжная улица 5А">Крепёжная улица 5А</option>';
+            address_options_str  += '<option value="Крепёжная улица 6">Крепёжная улица 6</option>';
+            address_options_str  += '<option value="Крепёжная улица 7">Крепёжная улица 7</option>';
+            address_options_str  += '<option value="Крепёжная улица 8">Крепёжная улица 8</option>';
+            address_options_str  += '<option value="Крепёжная улица 9">Крепёжная улица 9</option>';
+            address_options_str  += '<option value="Кузнецкий переулок 10">Кузнецкий переулок 10</option>';
+            address_options_str  += '<option value="Кузнецкий переулок 11">Кузнецкий переулок 11</option>';
+            address_options_str  += '<option value="Кузнецкий переулок 14">Кузнецкий переулок 14</option>';
+            address_options_str  += '<option value="Кузнецкий переулок 14/1">Кузнецкий переулок 14/1</option>';
+            address_options_str  += '<option value="Кузнецкий переулок 19">Кузнецкий переулок 19</option>';
+            address_options_str  += '<option value="Кузнецкий переулок 1А">Кузнецкий переулок 1А</option>';
+            address_options_str  += '<option value="Кузнецкий переулок 2">Кузнецкий переулок 2</option>';
+            address_options_str  += '<option value="Кузнецкий переулок 4">Кузнецкий переулок 4</option>';
+            address_options_str  += '<option value="Кузнецкий переулок 5">Кузнецкий переулок 5</option>';
+            address_options_str  += '<option value="Кузнецкий переулок 6">Кузнецкий переулок 6</option>';
+            address_options_str  += '<option value="Кузнецкий переулок 8">Кузнецкий переулок 8</option>';
+            address_options_str  += '<option value="Кузнецкий переулок 9">Кузнецкий переулок 9</option>';
+            address_options_str  += '<option value="Левобережная улица 1">Левобережная улица 1</option>';
+            address_options_str  += '<option value="Левобережная улица 11Б">Левобережная улица 11Б</option>';
+            address_options_str  += '<option value="Левобережная улица 12А">Левобережная улица 12А</option>';
+            address_options_str  += '<option value="Левобережная улица 13">Левобережная улица 13</option>';
+            address_options_str  += '<option value="Левобережная улица 15">Левобережная улица 15</option>';
+            address_options_str  += '<option value="Левобережная улица 17">Левобережная улица 17</option>';
+            address_options_str  += '<option value="Левобережная улица 19">Левобережная улица 19</option>';
+            address_options_str  += '<option value="Левобережная улица 1А">Левобережная улица 1А</option>';
+            address_options_str  += '<option value="Левобережная улица 1Г">Левобережная улица 1Г</option>';
+            address_options_str  += '<option value="Левобережная улица 1Д">Левобережная улица 1Д</option>';
+            address_options_str  += '<option value="Левобережная улица 21/1">Левобережная улица 21/1</option>';
+            address_options_str  += '<option value="Левобережная улица 23А">Левобережная улица 23А</option>';
+            address_options_str  += '<option value="Левобережная улица 29/1">Левобережная улица 29/1</option>';
+            address_options_str  += '<option value="Левобережная улица 5">Левобережная улица 5</option>';
+            address_options_str  += '<option value="Левобережная улица 5Г">Левобережная улица 5Г</option>';
+            address_options_str  += '<option value="Левобережная улица 7/1">Левобережная улица 7/1</option>';
+            address_options_str  += '<option value="Левобережная улица 9">Левобережная улица 9</option>';
+            address_options_str  += '<option value="Левобережный переулок 1/1">Левобережный переулок 1/1</option>';
+            address_options_str  += '<option value="Левобережный переулок 1/2">Левобережный переулок 1/2</option>';
+            address_options_str  += '<option value="Левобережный переулок 10">Левобережный переулок 10</option>';
+            address_options_str  += '<option value="Левобережный переулок 10А">Левобережный переулок 10А</option>';
+            address_options_str  += '<option value="Левобережный переулок 14">Левобережный переулок 14</option>';
+            address_options_str  += '<option value="Левобережный переулок 14/2">Левобережный переулок 14/2</option>';
+            address_options_str  += '<option value="Левобережный переулок 1А">Левобережный переулок 1А</option>';
+            address_options_str  += '<option value="Левобережный переулок 1Б">Левобережный переулок 1Б</option>';
+            address_options_str  += '<option value="Левобережный переулок 2">Левобережный переулок 2</option>';
+            address_options_str  += '<option value="Левобережный переулок 2Б">Левобережный переулок 2Б</option>';
+            address_options_str  += '<option value="Левобережный переулок 3">Левобережный переулок 3</option>';
+            address_options_str  += '<option value="Левобережный переулок 3/1">Левобережный переулок 3/1</option>';
+            address_options_str  += '<option value="Левобережный переулок 4А">Левобережный переулок 4А</option>';
+            address_options_str  += '<option value="Левобережный переулок 5">Левобережный переулок 5</option>';
+            address_options_str  += '<option value="Левобережный переулок 6">Левобережный переулок 6</option>';
+            address_options_str  += '<option value="Левобережный переулок 7">Левобережный переулок 7</option>';
+            address_options_str  += '<option value="Мельничная улица 10">Мельничная улица 10</option>';
+            address_options_str  += '<option value="Мельничная улица 11">Мельничная улица 11</option>';
+            address_options_str  += '<option value="Мельничная улица 12">Мельничная улица 12</option>';
+            address_options_str  += '<option value="Мельничная улица 13">Мельничная улица 13</option>';
+            address_options_str  += '<option value="Мельничная улица 14">Мельничная улица 14</option>';
+            address_options_str  += '<option value="Мельничная улица 15">Мельничная улица 15</option>';
+            address_options_str  += '<option value="Мельничная улица 16">Мельничная улица 16</option>';
+            address_options_str  += '<option value="Мельничная улица 17">Мельничная улица 17</option>';
+            address_options_str  += '<option value="Мельничная улица 18">Мельничная улица 18</option>';
+            address_options_str  += '<option value="Мельничная улица 19">Мельничная улица 19</option>';
+            address_options_str  += '<option value="Мельничная улица 19/1">Мельничная улица 19/1</option>';
+            address_options_str  += '<option value="Мельничная улица 2">Мельничная улица 2</option>';
+            address_options_str  += '<option value="Мельничная улица 20">Мельничная улица 20</option>';
+            address_options_str  += '<option value="Мельничная улица 21">Мельничная улица 21</option>';
+            address_options_str  += '<option value="Мельничная улица 23">Мельничная улица 23</option>';
+            address_options_str  += '<option value="Мельничная улица 23 С1">Мельничная улица 23 С1</option>';
+            address_options_str  += '<option value="Мельничная улица 24">Мельничная улица 24</option>';
+            address_options_str  += '<option value="Мельничная улица 25">Мельничная улица 25</option>';
+            address_options_str  += '<option value="Мельничная улица 26">Мельничная улица 26</option>';
+            address_options_str  += '<option value="Мельничная улица 27">Мельничная улица 27</option>';
+            address_options_str  += '<option value="Мельничная улица 29">Мельничная улица 29</option>';
+            address_options_str  += '<option value="Мельничная улица 29/1">Мельничная улица 29/1</option>';
+            address_options_str  += '<option value="Мельничная улица 2Б">Мельничная улица 2Б</option>';
+            address_options_str  += '<option value="Мельничная улица 32">Мельничная улица 32</option>';
+            address_options_str  += '<option value="Мельничная улица 33">Мельничная улица 33</option>';
+            address_options_str  += '<option value="Мельничная улица 34">Мельничная улица 34</option>';
+            address_options_str  += '<option value="Мельничная улица 35">Мельничная улица 35</option>';
+            address_options_str  += '<option value="Мельничная улица 35/1">Мельничная улица 35/1</option>';
+            address_options_str  += '<option value="Мельничная улица 36">Мельничная улица 36</option>';
+            address_options_str  += '<option value="Мельничная улица 38">Мельничная улица 38</option>';
+            address_options_str  += '<option value="Мельничная улица 38А">Мельничная улица 38А</option>';
+            address_options_str  += '<option value="Мельничная улица 38Б">Мельничная улица 38Б</option>';
+            address_options_str  += '<option value="Мельничная улица 38В">Мельничная улица 38В</option>';
+            address_options_str  += '<option value="Мельничная улица 38Г">Мельничная улица 38Г</option>';
+            address_options_str  += '<option value="Мельничная улица 40">Мельничная улица 40</option>';
+            address_options_str  += '<option value="Мельничная улица 40/2">Мельничная улица 40/2</option>';
+            address_options_str  += '<option value="Мельничная улица 42">Мельничная улица 42</option>';
+            address_options_str  += '<option value="Мельничная улица 45А">Мельничная улица 45А</option>';
+            address_options_str  += '<option value="Мельничная улица 47">Мельничная улица 47</option>';
+            address_options_str  += '<option value="Мельничная улица 51">Мельничная улица 51</option>';
+            address_options_str  += '<option value="Мельничная улица 53">Мельничная улица 53</option>';
+            address_options_str  += '<option value="Мельничная улица 55">Мельничная улица 55</option>';
+            address_options_str  += '<option value="Мельничная улица 57">Мельничная улица 57</option>';
+            address_options_str  += '<option value="Мельничная улица 59">Мельничная улица 59</option>';
+            address_options_str  += '<option value="Мельничная улица 61">Мельничная улица 61</option>';
+            address_options_str  += '<option value="Мельничная улица 63">Мельничная улица 63</option>';
+            address_options_str  += '<option value="Мельничная улица 65">Мельничная улица 65</option>';
+            address_options_str  += '<option value="Мельничная улица 67">Мельничная улица 67</option>';
+            address_options_str  += '<option value="Мельничная улица 67/1">Мельничная улица 67/1</option>';
+            address_options_str  += '<option value="Мельничная улица 69">Мельничная улица 69</option>';
+            address_options_str  += '<option value="Мельничная улица 73А">Мельничная улица 73А</option>';
+            address_options_str  += '<option value="Мельничная улица 75">Мельничная улица 75</option>';
+            address_options_str  += '<option value="Мельничная улица 75А">Мельничная улица 75А</option>';
+            address_options_str  += '<option value="Мельничная улица 77">Мельничная улица 77</option>';
+            address_options_str  += '<option value="Мельничная улица 79">Мельничная улица 79</option>';
+            address_options_str  += '<option value="Мельничная улица 8">Мельничная улица 8</option>';
+            address_options_str  += '<option value="Мельничный переулок 11">Мельничный переулок 11</option>';
+            address_options_str  += '<option value="Мельничный переулок 4">Мельничный переулок 4</option>';
+            address_options_str  += '<option value="Мельничный переулок 5">Мельничный переулок 5</option>';
+            address_options_str  += '<option value="Мельничный переулок 7">Мельничный переулок 7</option>';
+            address_options_str  += '<option value="Мельничный переулок 9">Мельничный переулок 9</option>';
+            address_options_str  += '<option value="Механический переулок 1">Механический переулок 1</option>';
+            address_options_str  += '<option value="Механический переулок 10">Механический переулок 10</option>';
+            address_options_str  += '<option value="Механический переулок 11">Механический переулок 11</option>';
+            address_options_str  += '<option value="Механический переулок 13">Механический переулок 13</option>';
+            address_options_str  += '<option value="Механический переулок 19">Механический переулок 19</option>';
+            address_options_str  += '<option value="Механический переулок 2">Механический переулок 2</option>';
+            address_options_str  += '<option value="Механический переулок 3">Механический переулок 3</option>';
+            address_options_str  += '<option value="Механический переулок 7">Механический переулок 7</option>';
+            address_options_str  += '<option value="Невская улица 14">Невская улица 14</option>';
+            address_options_str  += '<option value="Невская улица 4">Невская улица 4</option>';
+            address_options_str  += '<option value="Невская улица 6">Невская улица 6</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 1">Нижне-Луговая улица 1</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 103">Нижне-Луговая улица 103</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 105">Нижне-Луговая улица 105</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 105/2">Нижне-Луговая улица 105/2</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 107">Нижне-Луговая улица 107</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 109">Нижне-Луговая улица 109</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 109Б">Нижне-Луговая улица 109Б</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 11">Нижне-Луговая улица 11</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 111 с6">Нижне-Луговая улица 111 с6</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 113">Нижне-Луговая улица 113</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 12">Нижне-Луговая улица 12</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 12 с13">Нижне-Луговая улица 12 с13</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 12 с6">Нижне-Луговая улица 12 с6</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 12 с7">Нижне-Луговая улица 12 с7</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 12 с8">Нижне-Луговая улица 12 с8</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 12/2">Нижне-Луговая улица 12/2</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 12Б">Нижне-Луговая улица 12Б</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 12Д">Нижне-Луговая улица 12Д</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 13/1">Нижне-Луговая улица 13/1</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 14">Нижне-Луговая улица 14</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 14А">Нижне-Луговая улица 14А</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 14Б">Нижне-Луговая улица 14Б</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 16">Нижне-Луговая улица 16</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 16/1">Нижне-Луговая улица 16/1</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 16А">Нижне-Луговая улица 16А</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 16Б">Нижне-Луговая улица 16Б</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 16В">Нижне-Луговая улица 16В</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 2">Нижне-Луговая улица 2</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 2/1">Нижне-Луговая улица 2/1</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 21">Нижне-Луговая улица 21</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 33">Нижне-Луговая улица 33</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 37А">Нижне-Луговая улица 37А</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 39">Нижне-Луговая улица 39</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 4">Нижне-Луговая улица 4</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 4/1">Нижне-Луговая улица 4/1</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 43">Нижне-Луговая улица 43</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 45А">Нижне-Луговая улица 45А</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 45В">Нижне-Луговая улица 45В</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 47">Нижне-Луговая улица 47</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 49А">Нижне-Луговая улица 49А</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 4Б">Нижне-Луговая улица 4Б</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 5">Нижне-Луговая улица 5</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 51">Нижне-Луговая улица 51</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 53А">Нижне-Луговая улица 53А</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 85">Нижне-Луговая улица 85</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 85А">Нижне-Луговая улица 85А</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 85Б">Нижне-Луговая улица 85Б</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 87">Нижне-Луговая улица 87</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 87 с1">Нижне-Луговая улица 87 с1</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 87/1">Нижне-Луговая улица 87/1</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 87/2 с3">Нижне-Луговая улица 87/2 с3</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 87/5">Нижне-Луговая улица 87/5</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 87/6">Нижне-Луговая улица 87/6</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 87А">Нижне-Луговая улица 87А</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 87Б">Нижне-Луговая улица 87Б</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 87В">Нижне-Луговая улица 87В</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 87Г">Нижне-Луговая улица 87Г</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 87Д">Нижне-Луговая улица 87Д</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 89А">Нижне-Луговая улица 89А</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 9">Нижне-Луговая улица 9</option>';
+            address_options_str  += '<option value="Нижне-Луговая улица 95">Нижне-Луговая улица 95</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 1/1">Нижне-Складская улица 1/1</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 10">Нижне-Складская улица 10</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 11">Нижне-Складская улица 11</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 12">Нижне-Складская улица 12</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 13">Нижне-Складская улица 13</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 14">Нижне-Складская улица 14</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 15">Нижне-Складская улица 15</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 16">Нижне-Складская улица 16</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 16/1">Нижне-Складская улица 16/1</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 17">Нижне-Складская улица 17</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 18">Нижне-Складская улица 18</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 19">Нижне-Складская улица 19</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 1Д">Нижне-Складская улица 1Д</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 20">Нижне-Складская улица 20</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 20/1">Нижне-Складская улица 20/1</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 21">Нижне-Складская улица 21</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 22">Нижне-Складская улица 22</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 22/1">Нижне-Складская улица 22/1</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 23">Нижне-Складская улица 23</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 24">Нижне-Складская улица 24</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 24/1">Нижне-Складская улица 24/1</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 25">Нижне-Складская улица 25</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 26">Нижне-Складская улица 26</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 26/1">Нижне-Складская улица 26/1</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 27">Нижне-Складская улица 27</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 28">Нижне-Складская улица 28</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 29">Нижне-Складская улица 29</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 2А">Нижне-Складская улица 2А</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 3">Нижне-Складская улица 3</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 31">Нижне-Складская улица 31</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 32">Нижне-Складская улица 32</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 33">Нижне-Складская улица 33</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 34">Нижне-Складская улица 34</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 35">Нижне-Складская улица 35</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 36">Нижне-Складская улица 36</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 37">Нижне-Складская улица 37</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 38">Нижне-Складская улица 38</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 4">Нижне-Складская улица 4</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 40">Нижне-Складская улица 40</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 42">Нижне-Складская улица 42</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 44">Нижне-Складская улица 44</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 46">Нижне-Складская улица 46</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 48">Нижне-Складская улица 48</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 50">Нижне-Складская улица 50</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 52">Нижне-Складская улица 52</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 54">Нижне-Складская улица 54</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 56">Нижне-Складская улица 56</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 58">Нижне-Складская улица 58</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 6">Нижне-Складская улица 6</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 60">Нижне-Складская улица 60</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 62">Нижне-Складская улица 62</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 64">Нижне-Складская улица 64</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 66">Нижне-Складская улица 66</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 68">Нижне-Складская улица 68</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 7">Нижне-Складская улица 7</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 70">Нижне-Складская улица 70</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 72">Нижне-Складская улица 72</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 74">Нижне-Складская улица 74</option>';
+            address_options_str  += '<option value="Нижне-Складская улица 76">Нижне-Складская улица 76</option>';
+            address_options_str  += '<option value="Нижне-Складской переулок 1">Нижне-Складской переулок 1</option>';
+            address_options_str  += '<option value="Нижне-Складской переулок 11">Нижне-Складской переулок 11</option>';
+            address_options_str  += '<option value="Нижне-Складской переулок 13">Нижне-Складской переулок 13</option>';
+            address_options_str  += '<option value="Нижне-Складской переулок 15">Нижне-Складской переулок 15</option>';
+            address_options_str  += '<option value="Нижне-Складской переулок 19">Нижне-Складской переулок 19</option>';
+            address_options_str  += '<option value="Нижне-Складской переулок 21">Нижне-Складской переулок 21</option>';
+            address_options_str  += '<option value="Нижне-Складской переулок 23">Нижне-Складской переулок 23</option>';
+            address_options_str  += '<option value="Нижне-Складской переулок 25">Нижне-Складской переулок 25</option>';
+            address_options_str  += '<option value="Нижне-Складской переулок 3">Нижне-Складской переулок 3</option>';
+            address_options_str  += '<option value="Нижне-Складской переулок 4Б">Нижне-Складской переулок 4Б</option>';
+            address_options_str  += '<option value="Нижне-Складской переулок 6">Нижне-Складской переулок 6</option>';
+            address_options_str  += '<option value="Нижне-Складской переулок 7">Нижне-Складской переулок 7</option>';
+            address_options_str  += '<option value="Нижне-Складской переулок 8">Нижне-Складской переулок 8</option>';
+            address_options_str  += '<option value="Нижне-Складской переулок 8/1">Нижне-Складской переулок 8/1</option>';
+            address_options_str  += '<option value="Нижне-Складской переулок 9">Нижне-Складской переулок 9</option>';
+            address_options_str  += '<option value="Нижне-Складской проезд 11А">Нижне-Складской проезд 11А</option>';
+            address_options_str  += '<option value="Нижне-Складской проезд 3">Нижне-Складской проезд 3</option>';
+            address_options_str  += '<option value="Нижне-Складской проезд 3А">Нижне-Складской проезд 3А</option>';
+            address_options_str  += '<option value="Нижне-Складской проезд 5">Нижне-Складской проезд 5</option>';
+            address_options_str  += '<option value="Нижне-Складской проезд 6">Нижне-Складской проезд 6</option>';
+            address_options_str  += '<option value="Нижне-Складской проезд 9">Нижне-Складской проезд 9</option>';
+            address_options_str  += '<option value="Нижнескладская улица 1Ж">Нижнескладская улица 1Ж</option>';
+            address_options_str  += '<option value="Новороссийская улица 1">Новороссийская улица 1</option>';
+            address_options_str  += '<option value="Новороссийская улица 11">Новороссийская улица 11</option>';
+            address_options_str  += '<option value="Новороссийская улица 13">Новороссийская улица 13</option>';
+            address_options_str  += '<option value="Новороссийская улица 15">Новороссийская улица 15</option>';
+            address_options_str  += '<option value="Новороссийская улица 17">Новороссийская улица 17</option>';
+            address_options_str  += '<option value="Новороссийская улица 19">Новороссийская улица 19</option>';
+            address_options_str  += '<option value="Новороссийская улица 2">Новороссийская улица 2</option>';
+            address_options_str  += '<option value="Новороссийская улица 3">Новороссийская улица 3</option>';
+            address_options_str  += '<option value="Новороссийская улица 5">Новороссийская улица 5</option>';
+            address_options_str  += '<option value="Новороссийская улица 7">Новороссийская улица 7</option>';
+            address_options_str  += '<option value="Новороссийская улица 9">Новороссийская улица 9</option>';
+            address_options_str  += '<option value="Пойменный переулок 1">Пойменный переулок 1</option>';
+            address_options_str  += '<option value="Пойменный переулок 3">Пойменный переулок 3</option>';
+            address_options_str  += '<option value="Пойменный переулок 4">Пойменный переулок 4</option>';
+            address_options_str  += '<option value="Пойменный переулок 4А">Пойменный переулок 4А</option>';
+            address_options_str  += '<option value="Пойменный переулок 5">Пойменный переулок 5</option>';
+            address_options_str  += '<option value="Правобережная улица 10">Правобережная улица 10</option>';
+            address_options_str  += '<option value="Правобережная улица 10А">Правобережная улица 10А</option>';
+            address_options_str  += '<option value="Правобережная улица 11А">Правобережная улица 11А</option>';
+            address_options_str  += '<option value="Правобережная улица 11Б">Правобережная улица 11Б</option>';
+            address_options_str  += '<option value="Правобережная улица 12/1">Правобережная улица 12/1</option>';
+            address_options_str  += '<option value="Правобережная улица 12Б">Правобережная улица 12Б</option>';
+            address_options_str  += '<option value="Правобережная улица 12В">Правобережная улица 12В</option>';
+            address_options_str  += '<option value="Правобережная улица 13">Правобережная улица 13</option>';
+            address_options_str  += '<option value="Правобережная улица 14">Правобережная улица 14</option>';
+            address_options_str  += '<option value="Правобережная улица 15">Правобережная улица 15</option>';
+            address_options_str  += '<option value="Правобережная улица 16">Правобережная улица 16</option>';
+            address_options_str  += '<option value="Правобережная улица 17">Правобережная улица 17</option>';
+            address_options_str  += '<option value="Правобережная улица 19">Правобережная улица 19</option>';
+            address_options_str  += '<option value="Правобережная улица 2">Правобережная улица 2</option>';
+            address_options_str  += '<option value="Правобережная улица 20">Правобережная улица 20</option>';
+            address_options_str  += '<option value="Правобережная улица 20А">Правобережная улица 20А</option>';
+            address_options_str  += '<option value="Правобережная улица 21">Правобережная улица 21</option>';
+            address_options_str  += '<option value="Правобережная улица 22 с1">Правобережная улица 22 с1</option>';
+            address_options_str  += '<option value="Правобережная улица 24">Правобережная улица 24</option>';
+            address_options_str  += '<option value="Правобережная улица 25">Правобережная улица 25</option>';
+            address_options_str  += '<option value="Правобережная улица 26">Правобережная улица 26</option>';
+            address_options_str  += '<option value="Правобережная улица 27">Правобережная улица 27</option>';
+            address_options_str  += '<option value="Правобережная улица 28">Правобережная улица 28</option>';
+            address_options_str  += '<option value="Правобережная улица 30">Правобережная улица 30</option>';
+            address_options_str  += '<option value="Правобережная улица 32">Правобережная улица 32</option>';
+            address_options_str  += '<option value="Правобережная улица 33">Правобережная улица 33</option>';
+            address_options_str  += '<option value="Правобережная улица 33/1">Правобережная улица 33/1</option>';
+            address_options_str  += '<option value="Правобережная улица 34">Правобережная улица 34</option>';
+            address_options_str  += '<option value="Правобережная улица 35">Правобережная улица 35</option>';
+            address_options_str  += '<option value="Правобережная улица 36">Правобережная улица 36</option>';
+            address_options_str  += '<option value="Правобережная улица 37">Правобережная улица 37</option>';
+            address_options_str  += '<option value="Правобережная улица 38">Правобережная улица 38</option>';
+            address_options_str  += '<option value="Правобережная улица 40">Правобережная улица 40</option>';
+            address_options_str  += '<option value="Правобережная улица 41">Правобережная улица 41</option>';
+            address_options_str  += '<option value="Правобережная улица 42">Правобережная улица 42</option>';
+            address_options_str  += '<option value="Правобережная улица 42А">Правобережная улица 42А</option>';
+            address_options_str  += '<option value="Правобережная улица 43А">Правобережная улица 43А</option>';
+            address_options_str  += '<option value="Правобережная улица 44">Правобережная улица 44</option>';
+            address_options_str  += '<option value="Правобережная улица 44А">Правобережная улица 44А</option>';
+            address_options_str  += '<option value="Правобережная улица 9">Правобережная улица 9</option>';
+            address_options_str  += '<option value="Правобережная улица 9/1">Правобережная улица 9/1</option>';
+            address_options_str  += '<option value="Правобережная улица 9А">Правобережная улица 9А</option>';
+            address_options_str  += '<option value="Пролетарская улица 1">Пролетарская улица 1</option>';
+            address_options_str  += '<option value="Пролетарская улица 10">Пролетарская улица 10</option>';
+            address_options_str  += '<option value="Пролетарская улица 12">Пролетарская улица 12</option>';
+            address_options_str  += '<option value="Пролетарская улица 13">Пролетарская улица 13</option>';
+            address_options_str  += '<option value="Пролетарская улица 14">Пролетарская улица 14</option>';
+            address_options_str  += '<option value="Пролетарская улица 15">Пролетарская улица 15</option>';
+            address_options_str  += '<option value="Пролетарская улица 18">Пролетарская улица 18</option>';
+            address_options_str  += '<option value="Пролетарская улица 18А">Пролетарская улица 18А</option>';
+            address_options_str  += '<option value="Пролетарская улица 19">Пролетарская улица 19</option>';
+            address_options_str  += '<option value="Пролетарская улица 2">Пролетарская улица 2</option>';
+            address_options_str  += '<option value="Пролетарская улица 25">Пролетарская улица 25</option>';
+            address_options_str  += '<option value="Пролетарская улица 25/1">Пролетарская улица 25/1</option>';
+            address_options_str  += '<option value="Пролетарская улица 27">Пролетарская улица 27</option>';
+            address_options_str  += '<option value="Пролетарская улица 3">Пролетарская улица 3</option>';
+            address_options_str  += '<option value="Пролетарская улица 32">Пролетарская улица 32</option>';
+            address_options_str  += '<option value="Пролетарская улица 33">Пролетарская улица 33</option>';
+            address_options_str  += '<option value="Пролетарская улица 33/2">Пролетарская улица 33/2</option>';
+            address_options_str  += '<option value="Пролетарская улица 34">Пролетарская улица 34</option>';
+            address_options_str  += '<option value="Пролетарская улица 35">Пролетарская улица 35</option>';
+            address_options_str  += '<option value="Пролетарская улица 36">Пролетарская улица 36</option>';
+            address_options_str  += '<option value="Пролетарская улица 36 с2">Пролетарская улица 36 с2</option>';
+            address_options_str  += '<option value="Пролетарская улица 36/1">Пролетарская улица 36/1</option>';
+            address_options_str  += '<option value="Пролетарская улица 37">Пролетарская улица 37</option>';
+            address_options_str  += '<option value="Пролетарская улица 38">Пролетарская улица 38</option>';
+            address_options_str  += '<option value="Пролетарская улица 38 с1">Пролетарская улица 38 с1</option>';
+            address_options_str  += '<option value="Пролетарская улица 38/1">Пролетарская улица 38/1</option>';
+            address_options_str  += '<option value="Пролетарская улица 38/2">Пролетарская улица 38/2</option>';
+            address_options_str  += '<option value="Пролетарская улица 38/3">Пролетарская улица 38/3</option>';
+            address_options_str  += '<option value="Пролетарская улица 38/4">Пролетарская улица 38/4</option>';
+            address_options_str  += '<option value="Пролетарская улица 38/5">Пролетарская улица 38/5</option>';
+            address_options_str  += '<option value="Пролетарская улица 38/6">Пролетарская улица 38/6</option>';
+            address_options_str  += '<option value="Пролетарская улица 38/7">Пролетарская улица 38/7</option>';
+            address_options_str  += '<option value="Пролетарская улица 38А">Пролетарская улица 38А</option>';
+            address_options_str  += '<option value="Пролетарская улица 38Б">Пролетарская улица 38Б</option>';
+            address_options_str  += '<option value="Пролетарская улица 38В">Пролетарская улица 38В</option>';
+            address_options_str  += '<option value="Пролетарская улица 38В с1">Пролетарская улица 38В с1</option>';
+            address_options_str  += '<option value="Пролетарская улица 38В с4">Пролетарская улица 38В с4</option>';
+            address_options_str  += '<option value="Пролетарская улица 38В с6">Пролетарская улица 38В с6</option>';
+            address_options_str  += '<option value="Пролетарская улица 39">Пролетарская улица 39</option>';
+            address_options_str  += '<option value="Пролетарская улица 4">Пролетарская улица 4</option>';
+            address_options_str  += '<option value="Пролетарская улица 41">Пролетарская улица 41</option>';
+            address_options_str  += '<option value="Пролетарская улица 43">Пролетарская улица 43</option>';
+            address_options_str  += '<option value="Пролетарская улица 43А">Пролетарская улица 43А</option>';
+            address_options_str  += '<option value="Пролетарская улица 45">Пролетарская улица 45</option>';
+            address_options_str  += '<option value="Пролетарская улица 47">Пролетарская улица 47</option>';
+            address_options_str  += '<option value="Пролетарская улица 5">Пролетарская улица 5</option>';
+            address_options_str  += '<option value="Пролетарская улица 50/2">Пролетарская улица 50/2</option>';
+            address_options_str  += '<option value="Пролетарская улица 52">Пролетарская улица 52</option>';
+            address_options_str  += '<option value="Пролетарская улица 54">Пролетарская улица 54</option>';
+            address_options_str  += '<option value="Пролетарская улица 57">Пролетарская улица 57</option>';
+            address_options_str  += '<option value="Пролетарская улица 57/2">Пролетарская улица 57/2</option>';
+            address_options_str  += '<option value="Пролетарская улица 57А">Пролетарская улица 57А</option>';
+            address_options_str  += '<option value="Пролетарская улица 57Б">Пролетарская улица 57Б</option>';
+            address_options_str  += '<option value="Пролетарская улица 58">Пролетарская улица 58</option>';
+            address_options_str  += '<option value="Пролетарская улица 58А">Пролетарская улица 58А</option>';
+            address_options_str  += '<option value="Пролетарская улица 58Б">Пролетарская улица 58Б</option>';
+            address_options_str  += '<option value="Пролетарская улица 59">Пролетарская улица 59</option>';
+            address_options_str  += '<option value="Пролетарская улица 59 с1">Пролетарская улица 59 с1</option>';
+            address_options_str  += '<option value="Пролетарская улица 60">Пролетарская улица 60</option>';
+            address_options_str  += '<option value="Пролетарская улица 60 с3">Пролетарская улица 60 с3</option>';
+            address_options_str  += '<option value="Пролетарская улица 60 с6">Пролетарская улица 60 с6</option>';
+            address_options_str  += '<option value="Пролетарская улица 60/2">Пролетарская улица 60/2</option>';
+            address_options_str  += '<option value="Пролетарская улица 60А">Пролетарская улица 60А</option>';
+            address_options_str  += '<option value="Пролетарская улица 62">Пролетарская улица 62</option>';
+            address_options_str  += '<option value="Пролетарская улица 62 с1">Пролетарская улица 62 с1</option>';
+            address_options_str  += '<option value="Пролетарская улица 62 с14">Пролетарская улица 62 с14</option>';
+            address_options_str  += '<option value="Пролетарская улица 62/1">Пролетарская улица 62/1</option>';
+            address_options_str  += '<option value="Пролетарская улица 62/1 с4">Пролетарская улица 62/1 с4</option>';
+            address_options_str  += '<option value="Пролетарская улица 62/2">Пролетарская улица 62/2</option>';
+            address_options_str  += '<option value="Пролетарская улица 62/3">Пролетарская улица 62/3</option>';
+            address_options_str  += '<option value="Пролетарская улица 62/4">Пролетарская улица 62/4</option>';
+            address_options_str  += '<option value="Пролетарская улица 62/6">Пролетарская улица 62/6</option>';
+            address_options_str  += '<option value="Пролетарская улица 62/9">Пролетарская улица 62/9</option>';
+            address_options_str  += '<option value="Пролетарская улица 62А">Пролетарская улица 62А</option>';
+            address_options_str  += '<option value="Пролетарская улица 63">Пролетарская улица 63</option>';
+            address_options_str  += '<option value="Пролетарская улица 64/1">Пролетарская улица 64/1</option>';
+            address_options_str  += '<option value="Пролетарская улица 64А">Пролетарская улица 64А</option>';
+            address_options_str  += '<option value="Пролетарская улица 64Б">Пролетарская улица 64Б</option>';
+            address_options_str  += '<option value="Пролетарская улица 67">Пролетарская улица 67</option>';
+            address_options_str  += '<option value="Пролетарская улица 7">Пролетарская улица 7</option>';
+            address_options_str  += '<option value="Пролетарская улица 8">Пролетарская улица 8</option>';
+            address_options_str  += '<option value="Пролетарская улица 9">Пролетарская улица 9</option>';
+            address_options_str  += '<option value="Пролетарская улица 9А">Пролетарская улица 9А</option>';
+            address_options_str  += '<option value="Пропиточная улица 11">Пропиточная улица 11</option>';
+            address_options_str  += '<option value="Пропиточная улица 13">Пропиточная улица 13</option>';
+            address_options_str  += '<option value="Пропиточная улица 15">Пропиточная улица 15</option>';
+            address_options_str  += '<option value="Пропиточная улица 17">Пропиточная улица 17</option>';
+            address_options_str  += '<option value="Пропиточная улица 19">Пропиточная улица 19</option>';
+            address_options_str  += '<option value="Пропиточная улица 21">Пропиточная улица 21</option>';
+            address_options_str  += '<option value="Пропиточная улица 21А">Пропиточная улица 21А</option>';
+            address_options_str  += '<option value="Пропиточная улица 23">Пропиточная улица 23</option>';
+            address_options_str  += '<option value="Пропиточная улица 25">Пропиточная улица 25</option>';
+            address_options_str  += '<option value="Пропиточная улица 25А">Пропиточная улица 25А</option>';
+            address_options_str  += '<option value="Пропиточная улица 27">Пропиточная улица 27</option>';
+            address_options_str  += '<option value="Пропиточная улица 29">Пропиточная улица 29</option>';
+            address_options_str  += '<option value="Пропиточная улица 31">Пропиточная улица 31</option>';
+            address_options_str  += '<option value="Пропиточная улица 33">Пропиточная улица 33</option>';
+            address_options_str  += '<option value="Пропиточная улица 35">Пропиточная улица 35</option>';
+            address_options_str  += '<option value="Пропиточная улица 9">Пропиточная улица 9</option>';
+            address_options_str  += '<option value="Просторный переулок 1">Просторный переулок 1</option>';
+            address_options_str  += '<option value="Просторный переулок 10">Просторный переулок 10</option>';
+            address_options_str  += '<option value="Просторный переулок 10/1">Просторный переулок 10/1</option>';
+            address_options_str  += '<option value="Просторный переулок 10Б">Просторный переулок 10Б</option>';
+            address_options_str  += '<option value="Просторный переулок 11">Просторный переулок 11</option>';
+            address_options_str  += '<option value="Просторный переулок 12">Просторный переулок 12</option>';
+            address_options_str  += '<option value="Просторный переулок 13">Просторный переулок 13</option>';
+            address_options_str  += '<option value="Просторный переулок 13/1">Просторный переулок 13/1</option>';
+            address_options_str  += '<option value="Просторный переулок 15">Просторный переулок 15</option>';
+            address_options_str  += '<option value="Просторный переулок 17">Просторный переулок 17</option>';
+            address_options_str  += '<option value="Просторный переулок 2">Просторный переулок 2</option>';
+            address_options_str  += '<option value="Просторный переулок 21">Просторный переулок 21</option>';
+            address_options_str  += '<option value="Просторный переулок 21/1">Просторный переулок 21/1</option>';
+            address_options_str  += '<option value="Просторный переулок 2А">Просторный переулок 2А</option>';
+            address_options_str  += '<option value="Просторный переулок 3А">Просторный переулок 3А</option>';
+            address_options_str  += '<option value="Просторный переулок 4">Просторный переулок 4</option>';
+            address_options_str  += '<option value="Просторный переулок 5">Просторный переулок 5</option>';
+            address_options_str  += '<option value="Просторный переулок 6">Просторный переулок 6</option>';
+            address_options_str  += '<option value="Просторный переулок 7">Просторный переулок 7</option>';
+            address_options_str  += '<option value="Просторный переулок 8">Просторный переулок 8</option>';
+            address_options_str  += '<option value="Просторный переулок 8А">Просторный переулок 8А</option>';
+            address_options_str  += '<option value="Просторный переулок 9А">Просторный переулок 9А</option>';
+            address_options_str  += '<option value="Проточная улица 1">Проточная улица 1</option>';
+            address_options_str  += '<option value="Проточная улица 11">Проточная улица 11</option>';
+            address_options_str  += '<option value="Проточная улица 19">Проточная улица 19</option>';
+            address_options_str  += '<option value="Проточная улица 1Б">Проточная улица 1Б</option>';
+            address_options_str  += '<option value="Проточная улица 1В">Проточная улица 1В</option>';
+            address_options_str  += '<option value="Проточная улица 2">Проточная улица 2</option>';
+            address_options_str  += '<option value="Проточная улица 21">Проточная улица 21</option>';
+            address_options_str  += '<option value="Проточная улица 23">Проточная улица 23</option>';
+            address_options_str  += '<option value="Проточная улица 25">Проточная улица 25</option>';
+            address_options_str  += '<option value="Проточная улица 3">Проточная улица 3</option>';
+            address_options_str  += '<option value="Проточная улица 4А">Проточная улица 4А</option>';
+            address_options_str  += '<option value="Проточная улица 4Б">Проточная улица 4Б</option>';
+            address_options_str  += '<option value="Проточная улица 5">Проточная улица 5</option>';
+            address_options_str  += '<option value="Проточная улица 6">Проточная улица 6</option>';
+            address_options_str  += '<option value="Проточная улица 6А">Проточная улица 6А</option>';
+            address_options_str  += '<option value="Проточная улица 7">Проточная улица 7</option>';
+            address_options_str  += '<option value="Проточная улица 9">Проточная улица 9</option>';
+            address_options_str  += '<option value="Профсоюзная улица 1">Профсоюзная улица 1</option>';
+            address_options_str  += '<option value="Профсоюзная улица 1/1">Профсоюзная улица 1/1</option>';
+            address_options_str  += '<option value="Профсоюзная улица 11">Профсоюзная улица 11</option>';
+            address_options_str  += '<option value="Профсоюзная улица 11А">Профсоюзная улица 11А</option>';
+            address_options_str  += '<option value="Профсоюзная улица 13">Профсоюзная улица 13</option>';
+            address_options_str  += '<option value="Профсоюзная улица 13А">Профсоюзная улица 13А</option>';
+            address_options_str  += '<option value="Профсоюзная улица 15">Профсоюзная улица 15</option>';
+            address_options_str  += '<option value="Профсоюзная улица 15А">Профсоюзная улица 15А</option>';
+            address_options_str  += '<option value="Профсоюзная улица 17">Профсоюзная улица 17</option>';
+            address_options_str  += '<option value="Профсоюзная улица 17А">Профсоюзная улица 17А</option>';
+            address_options_str  += '<option value="Профсоюзная улица 19">Профсоюзная улица 19</option>';
+            address_options_str  += '<option value="Профсоюзная улица 1А">Профсоюзная улица 1А</option>';
+            address_options_str  += '<option value="Профсоюзная улица 2 с14">Профсоюзная улица 2 с14</option>';
+            address_options_str  += '<option value="Профсоюзная улица 2/1">Профсоюзная улица 2/1</option>';
+            address_options_str  += '<option value="Профсоюзная улица 2/1 с1">Профсоюзная улица 2/1 с1</option>';
+            address_options_str  += '<option value="Профсоюзная улица 21">Профсоюзная улица 21</option>';
+            address_options_str  += '<option value="Профсоюзная улица 21А">Профсоюзная улица 21А</option>';
+            address_options_str  += '<option value="Профсоюзная улица 23">Профсоюзная улица 23</option>';
+            address_options_str  += '<option value="Профсоюзная улица 23А">Профсоюзная улица 23А</option>';
+            address_options_str  += '<option value="Профсоюзная улица 25">Профсоюзная улица 25</option>';
+            address_options_str  += '<option value="Профсоюзная улица 25/1">Профсоюзная улица 25/1</option>';
+            address_options_str  += '<option value="Профсоюзная улица 25/2">Профсоюзная улица 25/2</option>';
+            address_options_str  += '<option value="Профсоюзная улица 29">Профсоюзная улица 29</option>';
+            address_options_str  += '<option value="Профсоюзная улица 2А с1">Профсоюзная улица 2А с1</option>';
+            address_options_str  += '<option value="Профсоюзная улица 2А с6">Профсоюзная улица 2А с6</option>';
+            address_options_str  += '<option value="Профсоюзная улица 2В">Профсоюзная улица 2В</option>';
+            address_options_str  += '<option value="Профсоюзная улица 3">Профсоюзная улица 3</option>';
+            address_options_str  += '<option value="Профсоюзная улица 31">Профсоюзная улица 31</option>';
+            address_options_str  += '<option value="Профсоюзная улица 31/1">Профсоюзная улица 31/1</option>';
+            address_options_str  += '<option value="Профсоюзная улица 33">Профсоюзная улица 33</option>';
+            address_options_str  += '<option value="Профсоюзная улица 35">Профсоюзная улица 35</option>';
+            address_options_str  += '<option value="Профсоюзная улица 35А">Профсоюзная улица 35А</option>';
+            address_options_str  += '<option value="Профсоюзная улица 37">Профсоюзная улица 37</option>';
+            address_options_str  += '<option value="Профсоюзная улица 3А">Профсоюзная улица 3А</option>';
+            address_options_str  += '<option value="Профсоюзная улица 4А">Профсоюзная улица 4А</option>';
+            address_options_str  += '<option value="Профсоюзная улица 5">Профсоюзная улица 5</option>';
+            address_options_str  += '<option value="Профсоюзная улица 5А">Профсоюзная улица 5А</option>';
+            address_options_str  += '<option value="Профсоюзная улица 7">Профсоюзная улица 7</option>';
+            address_options_str  += '<option value="Профсоюзная улица 7 с1">Профсоюзная улица 7 с1</option>';
+            address_options_str  += '<option value="Профсоюзная улица 7А">Профсоюзная улица 7А</option>';
+            address_options_str  += '<option value="Профсоюзная улица 9">Профсоюзная улица 9</option>';
+            address_options_str  += '<option value="Профсоюзная улица 9А">Профсоюзная улица 9А</option>';
+            address_options_str  += '<option value="Речной переулок 3">Речной переулок 3</option>';
+            address_options_str  += '<option value="Речной переулок 4">Речной переулок 4</option>';
+            address_options_str  += '<option value="Речной переулок 6">Речной переулок 6</option>';
+            address_options_str  += '<option value="Сплавная улица 100">Сплавная улица 100</option>';
+            address_options_str  += '<option value="Сплавная улица 100А">Сплавная улица 100А</option>';
+            address_options_str  += '<option value="Сплавная улица 102">Сплавная улица 102</option>';
+            address_options_str  += '<option value="Сплавная улица 104/5">Сплавная улица 104/5</option>';
+            address_options_str  += '<option value="Сплавная улица 104/6">Сплавная улица 104/6</option>';
+            address_options_str  += '<option value="Сплавная улица 104А">Сплавная улица 104А</option>';
+            address_options_str  += '<option value="Сплавная улица 104Б">Сплавная улица 104Б</option>';
+            address_options_str  += '<option value="Сплавная улица 106">Сплавная улица 106</option>';
+            address_options_str  += '<option value="Сплавная улица 106/1">Сплавная улица 106/1</option>';
+            address_options_str  += '<option value="Сплавная улица 106/2">Сплавная улица 106/2</option>';
+            address_options_str  += '<option value="Сплавная улица 106/29">Сплавная улица 106/29</option>';
+            address_options_str  += '<option value="Сплавная улица 106/5">Сплавная улица 106/5</option>';
+            address_options_str  += '<option value="Сплавная улица 106/8">Сплавная улица 106/8</option>';
+            address_options_str  += '<option value="Сплавная улица 106Б">Сплавная улица 106Б</option>';
+            address_options_str  += '<option value="Сплавная улица 16">Сплавная улица 16</option>';
+            address_options_str  += '<option value="Сплавная улица 18">Сплавная улица 18</option>';
+            address_options_str  += '<option value="Сплавная улица 1Д">Сплавная улица 1Д</option>';
+            address_options_str  += '<option value="Сплавная улица 1Л">Сплавная улица 1Л</option>';
+            address_options_str  += '<option value="Сплавная улица 2/3">Сплавная улица 2/3</option>';
+            address_options_str  += '<option value="Сплавная улица 2/30">Сплавная улица 2/30</option>';
+            address_options_str  += '<option value="Сплавная улица 2/301">Сплавная улица 2/301</option>';
+            address_options_str  += '<option value="Сплавная улица 2/32">Сплавная улица 2/32</option>';
+            address_options_str  += '<option value="Сплавная улица 2/321">Сплавная улица 2/321</option>';
+            address_options_str  += '<option value="Сплавная улица 2/43">Сплавная улица 2/43</option>';
+            address_options_str  += '<option value="Сплавная улица 24">Сплавная улица 24</option>';
+            address_options_str  += '<option value="Сплавная улица 24А">Сплавная улица 24А</option>';
+            address_options_str  += '<option value="Сплавная улица 26">Сплавная улица 26</option>';
+            address_options_str  += '<option value="Сплавная улица 28">Сплавная улица 28</option>';
+            address_options_str  += '<option value="Сплавная улица 2А">Сплавная улица 2А</option>';
+            address_options_str  += '<option value="Сплавная улица 2Б">Сплавная улица 2Б</option>';
+            address_options_str  += '<option value="Сплавная улица 3">Сплавная улица 3</option>';
+            address_options_str  += '<option value="Сплавная улица 3/1">Сплавная улица 3/1</option>';
+            address_options_str  += '<option value="Сплавная улица 30">Сплавная улица 30</option>';
+            address_options_str  += '<option value="Сплавная улица 32">Сплавная улица 32</option>';
+            address_options_str  += '<option value="Сплавная улица 34">Сплавная улица 34</option>';
+            address_options_str  += '<option value="Сплавная улица 36">Сплавная улица 36</option>';
+            address_options_str  += '<option value="Сплавная улица 38">Сплавная улица 38</option>';
+            address_options_str  += '<option value="Сплавная улица 4">Сплавная улица 4</option>';
+            address_options_str  += '<option value="Сплавная улица 40">Сплавная улица 40</option>';
+            address_options_str  += '<option value="Сплавная улица 44">Сплавная улица 44</option>';
+            address_options_str  += '<option value="Сплавная улица 46">Сплавная улица 46</option>';
+            address_options_str  += '<option value="Сплавная улица 47">Сплавная улица 47</option>';
+            address_options_str  += '<option value="Сплавная улица 4Ж">Сплавная улица 4Ж</option>';
+            address_options_str  += '<option value="Сплавная улица 5">Сплавная улица 5</option>';
+            address_options_str  += '<option value="Сплавная улица 56">Сплавная улица 56</option>';
+            address_options_str  += '<option value="Сплавная улица 58">Сплавная улица 58</option>';
+            address_options_str  += '<option value="Сплавная улица 5А">Сплавная улица 5А</option>';
+            address_options_str  += '<option value="Сплавная улица 60">Сплавная улица 60</option>';
+            address_options_str  += '<option value="Сплавная улица 62">Сплавная улица 62</option>';
+            address_options_str  += '<option value="Сплавная улица 64">Сплавная улица 64</option>';
+            address_options_str  += '<option value="Сплавная улица 64А">Сплавная улица 64А</option>';
+            address_options_str  += '<option value="Сплавная улица 66">Сплавная улица 66</option>';
+            address_options_str  += '<option value="Сплавная улица 68">Сплавная улица 68</option>';
+            address_options_str  += '<option value="Сплавная улица 7">Сплавная улица 7</option>';
+            address_options_str  += '<option value="Сплавная улица 70/2">Сплавная улица 70/2</option>';
+            address_options_str  += '<option value="Сплавная улица 70Б">Сплавная улица 70Б</option>';
+            address_options_str  += '<option value="Сплавная улица 74">Сплавная улица 74</option>';
+            address_options_str  += '<option value="Сплавная улица 76А">Сплавная улица 76А</option>';
+            address_options_str  += '<option value="Сплавная улица 78А">Сплавная улица 78А</option>';
+            address_options_str  += '<option value="Сплавная улица 7В">Сплавная улица 7В</option>';
+            address_options_str  += '<option value="Сплавная улица 82А">Сплавная улица 82А</option>';
+            address_options_str  += '<option value="Сплавная улица 84">Сплавная улица 84</option>';
+            address_options_str  += '<option value="Сплавная улица 86">Сплавная улица 86</option>';
+            address_options_str  += '<option value="Сплавная улица 88">Сплавная улица 88</option>';
+            address_options_str  += '<option value="Сплавная улица 8А">Сплавная улица 8А</option>';
+            address_options_str  += '<option value="Сплавная улица 9">Сплавная улица 9</option>';
+            address_options_str  += '<option value="Сплавная улица 90">Сплавная улица 90</option>';
+            address_options_str  += '<option value="Сплавная улица 92">Сплавная улица 92</option>';
+            address_options_str  += '<option value="Сплавная улица 94">Сплавная улица 94</option>';
+            address_options_str  += '<option value="Сплавная улица 96">Сплавная улица 96</option>';
+            address_options_str  += '<option value="Сплавная улица 98">Сплавная улица 98</option>';
+            address_options_str  += '<option value="Строевая улица 10">Строевая улица 10</option>';
+            address_options_str  += '<option value="Строевая улица 10А">Строевая улица 10А</option>';
+            address_options_str  += '<option value="Строевая улица 11">Строевая улица 11</option>';
+            address_options_str  += '<option value="Строевая улица 12">Строевая улица 12</option>';
+            address_options_str  += '<option value="Строевая улица 13">Строевая улица 13</option>';
+            address_options_str  += '<option value="Строевая улица 14">Строевая улица 14</option>';
+            address_options_str  += '<option value="Строевая улица 15">Строевая улица 15</option>';
+            address_options_str  += '<option value="Строевая улица 16">Строевая улица 16</option>';
+            address_options_str  += '<option value="Строевая улица 17">Строевая улица 17</option>';
+            address_options_str  += '<option value="Строевая улица 18">Строевая улица 18</option>';
+            address_options_str  += '<option value="Строевая улица 19">Строевая улица 19</option>';
+            address_options_str  += '<option value="Строевая улица 20">Строевая улица 20</option>';
+            address_options_str  += '<option value="Строевая улица 21">Строевая улица 21</option>';
+            address_options_str  += '<option value="Строевая улица 22">Строевая улица 22</option>';
+            address_options_str  += '<option value="Строевая улица 23">Строевая улица 23</option>';
+            address_options_str  += '<option value="Строевая улица 24">Строевая улица 24</option>';
+            address_options_str  += '<option value="Строевая улица 25">Строевая улица 25</option>';
+            address_options_str  += '<option value="Строевая улица 26">Строевая улица 26</option>';
+            address_options_str  += '<option value="Строевая улица 27">Строевая улица 27</option>';
+            address_options_str  += '<option value="Строевая улица 28">Строевая улица 28</option>';
+            address_options_str  += '<option value="Строевая улица 29">Строевая улица 29</option>';
+            address_options_str  += '<option value="Строевая улица 30">Строевая улица 30</option>';
+            address_options_str  += '<option value="Строевая улица 31">Строевая улица 31</option>';
+            address_options_str  += '<option value="Строевая улица 32">Строевая улица 32</option>';
+            address_options_str  += '<option value="Строевая улица 33">Строевая улица 33</option>';
+            address_options_str  += '<option value="Строевая улица 34">Строевая улица 34</option>';
+            address_options_str  += '<option value="Строевая улица 35">Строевая улица 35</option>';
+            address_options_str  += '<option value="Строевая улица 36">Строевая улица 36</option>';
+            address_options_str  += '<option value="Строевая улица 37">Строевая улица 37</option>';
+            address_options_str  += '<option value="Строевая улица 38">Строевая улица 38</option>';
+            address_options_str  += '<option value="Строевая улица 39">Строевая улица 39</option>';
+            address_options_str  += '<option value="Строевая улица 4">Строевая улица 4</option>';
+            address_options_str  += '<option value="Строевая улица 40">Строевая улица 40</option>';
+            address_options_str  += '<option value="Строевая улица 41">Строевая улица 41</option>';
+            address_options_str  += '<option value="Строевая улица 41/1">Строевая улица 41/1</option>';
+            address_options_str  += '<option value="Строевая улица 42">Строевая улица 42</option>';
+            address_options_str  += '<option value="Строевая улица 44">Строевая улица 44</option>';
+            address_options_str  += '<option value="Строевая улица 46">Строевая улица 46</option>';
+            address_options_str  += '<option value="Строевая улица 48">Строевая улица 48</option>';
+            address_options_str  += '<option value="Строевая улица 50">Строевая улица 50</option>';
+            address_options_str  += '<option value="Строевая улица 7">Строевая улица 7</option>';
+            address_options_str  += '<option value="Строевая улица 9">Строевая улица 9</option>';
+            address_options_str  += '<option value="Строительный переулок 10">Строительный переулок 10</option>';
+            address_options_str  += '<option value="Строительный переулок 11">Строительный переулок 11</option>';
+            address_options_str  += '<option value="Строительный переулок 12">Строительный переулок 12</option>';
+            address_options_str  += '<option value="Строительный переулок 13">Строительный переулок 13</option>';
+            address_options_str  += '<option value="Строительный переулок 14">Строительный переулок 14</option>';
+            address_options_str  += '<option value="Строительный переулок 15">Строительный переулок 15</option>';
+            address_options_str  += '<option value="Строительный переулок 18">Строительный переулок 18</option>';
+            address_options_str  += '<option value="Строительный переулок 2">Строительный переулок 2</option>';
+            address_options_str  += '<option value="Строительный переулок 20">Строительный переулок 20</option>';
+            address_options_str  += '<option value="Строительный переулок 22">Строительный переулок 22</option>';
+            address_options_str  += '<option value="Строительный переулок 3">Строительный переулок 3</option>';
+            address_options_str  += '<option value="Строительный переулок 3А">Строительный переулок 3А</option>';
+            address_options_str  += '<option value="Строительный переулок 4">Строительный переулок 4</option>';
+            address_options_str  += '<option value="Строительный переулок 5">Строительный переулок 5</option>';
+            address_options_str  += '<option value="Строительный переулок 5А">Строительный переулок 5А</option>';
+            address_options_str  += '<option value="Строительный переулок 6">Строительный переулок 6</option>';
+            address_options_str  += '<option value="Сухоозёрный переулок 11">Сухоозёрный переулок 11</option>';
+            address_options_str  += '<option value="Сухоозёрный переулок 11А">Сухоозёрный переулок 11А</option>';
+            address_options_str  += '<option value="Сухоозёрный переулок 13">Сухоозёрный переулок 13</option>';
+            address_options_str  += '<option value="Сухоозёрный переулок 13/1">Сухоозёрный переулок 13/1</option>';
+            address_options_str  += '<option value="Сухоозёрный переулок 13А">Сухоозёрный переулок 13А</option>';
+            address_options_str  += '<option value="Сухоозёрный переулок 14">Сухоозёрный переулок 14</option>';
+            address_options_str  += '<option value="Сухоозёрный переулок 14/1">Сухоозёрный переулок 14/1</option>';
+            address_options_str  += '<option value="Сухоозёрный переулок 5">Сухоозёрный переулок 5</option>';
+            address_options_str  += '<option value="Сухоозёрный переулок 6">Сухоозёрный переулок 6</option>';
+            address_options_str  += '<option value="Сухоозёрный переулок 6/3">Сухоозёрный переулок 6/3</option>';
+            address_options_str  += '<option value="Сухоозёрный переулок 7">Сухоозёрный переулок 7</option>';
+            address_options_str  += '<option value="Сухоозёрный переулок 7А">Сухоозёрный переулок 7А</option>';
+            address_options_str  += '<option value="Сухоозёрный переулок 9">Сухоозёрный переулок 9</option>';
+            address_options_str  += '<option value="Тихий переулок 12">Тихий переулок 12</option>';
+            address_options_str  += '<option value="Тихий переулок 14">Тихий переулок 14</option>';
+            address_options_str  += '<option value="Тихий переулок 15А">Тихий переулок 15А</option>';
+            address_options_str  += '<option value="Тихий переулок 16А">Тихий переулок 16А</option>';
+            address_options_str  += '<option value="Тихий переулок 17">Тихий переулок 17</option>';
+            address_options_str  += '<option value="Тихий переулок 18А">Тихий переулок 18А</option>';
+            address_options_str  += '<option value="Тихий переулок 2">Тихий переулок 2</option>';
+            address_options_str  += '<option value="Тихий переулок 20">Тихий переулок 20</option>';
+            address_options_str  += '<option value="Тихий переулок 20А">Тихий переулок 20А</option>';
+            address_options_str  += '<option value="Тихий переулок 23А">Тихий переулок 23А</option>';
+            address_options_str  += '<option value="Тихий переулок 25">Тихий переулок 25</option>';
+            address_options_str  += '<option value="Тихий переулок 25/1">Тихий переулок 25/1</option>';
+            address_options_str  += '<option value="Тихий переулок 25/2">Тихий переулок 25/2</option>';
+            address_options_str  += '<option value="Тихий переулок 27">Тихий переулок 27</option>';
+            address_options_str  += '<option value="Тихий переулок 27/1">Тихий переулок 27/1</option>';
+            address_options_str  += '<option value="Тихий переулок 28">Тихий переулок 28</option>';
+            address_options_str  += '<option value="Тихий переулок 3">Тихий переулок 3</option>';
+            address_options_str  += '<option value="Тихий переулок 4">Тихий переулок 4</option>';
+            address_options_str  += '<option value="Тихий переулок 4/1">Тихий переулок 4/1</option>';
+            address_options_str  += '<option value="Тихий переулок 5">Тихий переулок 5</option>';
+            address_options_str  += '<option value="Тихий переулок 6">Тихий переулок 6</option>';
+            address_options_str  += '<option value="Тихий переулок 6А">Тихий переулок 6А</option>';
+            address_options_str  += '<option value="Тихий переулок 8">Тихий переулок 8</option>';
+            address_options_str  += '<option value="Тихий переулок 9">Тихий переулок 9</option>';
+            address_options_str  += '<option value="Тихий тупик 5">Тихий тупик 5</option>';
+            address_options_str  += '<option value="Трудовая улица 1">Трудовая улица 1</option>';
+            address_options_str  += '<option value="Трудовая улица 10">Трудовая улица 10</option>';
+            address_options_str  += '<option value="Трудовая улица 11">Трудовая улица 11</option>';
+            address_options_str  += '<option value="Трудовая улица 11/1">Трудовая улица 11/1</option>';
+            address_options_str  += '<option value="Трудовая улица 11/2">Трудовая улица 11/2</option>';
+            address_options_str  += '<option value="Трудовая улица 12">Трудовая улица 12</option>';
+            address_options_str  += '<option value="Трудовая улица 14">Трудовая улица 14</option>';
+            address_options_str  += '<option value="Трудовая улица 15">Трудовая улица 15</option>';
+            address_options_str  += '<option value="Трудовая улица 16">Трудовая улица 16</option>';
+            address_options_str  += '<option value="Трудовая улица 17">Трудовая улица 17</option>';
+            address_options_str  += '<option value="Трудовая улица 18">Трудовая улица 18</option>';
+            address_options_str  += '<option value="Трудовая улица 18/1">Трудовая улица 18/1</option>';
+            address_options_str  += '<option value="Трудовая улица 18А">Трудовая улица 18А</option>';
+            address_options_str  += '<option value="Трудовая улица 19">Трудовая улица 19</option>';
+            address_options_str  += '<option value="Трудовая улица 2">Трудовая улица 2</option>';
+            address_options_str  += '<option value="Трудовая улица 20">Трудовая улица 20</option>';
+            address_options_str  += '<option value="Трудовая улица 22 с1">Трудовая улица 22 с1</option>';
+            address_options_str  += '<option value="Трудовая улица 22 с2">Трудовая улица 22 с2</option>';
+            address_options_str  += '<option value="Трудовая улица 22/1">Трудовая улица 22/1</option>';
+            address_options_str  += '<option value="Трудовая улица 22/2">Трудовая улица 22/2</option>';
+            address_options_str  += '<option value="Трудовая улица 24">Трудовая улица 24</option>';
+            address_options_str  += '<option value="Трудовая улица 2А">Трудовая улица 2А</option>';
+            address_options_str  += '<option value="Трудовая улица 3">Трудовая улица 3</option>';
+            address_options_str  += '<option value="Трудовая улица 4">Трудовая улица 4</option>';
+            address_options_str  += '<option value="Трудовая улица 4/1">Трудовая улица 4/1</option>';
+            address_options_str  += '<option value="Трудовая улица 5">Трудовая улица 5</option>';
+            address_options_str  += '<option value="Трудовая улица 6">Трудовая улица 6</option>';
+            address_options_str  += '<option value="Трудовая улица 7">Трудовая улица 7</option>';
+            address_options_str  += '<option value="Трудовая улица 8">Трудовая улица 8</option>';
+            address_options_str  += '<option value="Тупиковый переулок 1">Тупиковый переулок 1</option>';
+            address_options_str  += '<option value="Тупиковый переулок 10">Тупиковый переулок 10</option>';
+            address_options_str  += '<option value="Тупиковый переулок 11">Тупиковый переулок 11</option>';
+            address_options_str  += '<option value="Тупиковый переулок 12">Тупиковый переулок 12</option>';
+            address_options_str  += '<option value="Тупиковый переулок 13">Тупиковый переулок 13</option>';
+            address_options_str  += '<option value="Тупиковый переулок 14">Тупиковый переулок 14</option>';
+            address_options_str  += '<option value="Тупиковый переулок 15">Тупиковый переулок 15</option>';
+            address_options_str  += '<option value="Тупиковый переулок 16">Тупиковый переулок 16</option>';
+            address_options_str  += '<option value="Тупиковый переулок 16А">Тупиковый переулок 16А</option>';
+            address_options_str  += '<option value="Тупиковый переулок 17">Тупиковый переулок 17</option>';
+            address_options_str  += '<option value="Тупиковый переулок 20">Тупиковый переулок 20</option>';
+            address_options_str  += '<option value="Тупиковый переулок 21">Тупиковый переулок 21</option>';
+            address_options_str  += '<option value="Тупиковый переулок 23/1">Тупиковый переулок 23/1</option>';
+            address_options_str  += '<option value="Тупиковый переулок 25А">Тупиковый переулок 25А</option>';
+            address_options_str  += '<option value="Тупиковый переулок 29">Тупиковый переулок 29</option>';
+            address_options_str  += '<option value="Тупиковый переулок 2В">Тупиковый переулок 2В</option>';
+            address_options_str  += '<option value="Тупиковый переулок 3">Тупиковый переулок 3</option>';
+            address_options_str  += '<option value="Тупиковый переулок 31">Тупиковый переулок 31</option>';
+            address_options_str  += '<option value="Тупиковый переулок 33">Тупиковый переулок 33</option>';
+            address_options_str  += '<option value="Тупиковый переулок 4">Тупиковый переулок 4</option>';
+            address_options_str  += '<option value="Тупиковый переулок 5">Тупиковый переулок 5</option>';
+            address_options_str  += '<option value="Тупиковый переулок 7">Тупиковый переулок 7</option>';
+            address_options_str  += '<option value="Тупиковый переулок 8">Тупиковый переулок 8</option>';
+            address_options_str  += '<option value="Тупиковый переулок 9">Тупиковый переулок 9</option>';
+            address_options_str  += '<option value="Флотский переулок 1А">Флотский переулок 1А</option>';
+            address_options_str  += '<option value="Черемошинский переулок 1">Черемошинский переулок 1</option>';
+            address_options_str  += '<option value="Черемошинский переулок 10">Черемошинский переулок 10</option>';
+            address_options_str  += '<option value="Черемошинский переулок 10А">Черемошинский переулок 10А</option>';
+            address_options_str  += '<option value="Черемошинский переулок 11">Черемошинский переулок 11</option>';
+            address_options_str  += '<option value="Черемошинский переулок 13">Черемошинский переулок 13</option>';
+            address_options_str  += '<option value="Черемошинский переулок 15">Черемошинский переулок 15</option>';
+            address_options_str  += '<option value="Черемошинский переулок 17">Черемошинский переулок 17</option>';
+            address_options_str  += '<option value="Черемошинский переулок 19">Черемошинский переулок 19</option>';
+            address_options_str  += '<option value="Черемошинский переулок 2">Черемошинский переулок 2</option>';
+            address_options_str  += '<option value="Черемошинский переулок 3">Черемошинский переулок 3</option>';
+            address_options_str  += '<option value="Черемошинский переулок 4">Черемошинский переулок 4</option>';
+            address_options_str  += '<option value="Черемошинский переулок 4/1">Черемошинский переулок 4/1</option>';
+            address_options_str  += '<option value="Черемошинский переулок 5">Черемошинский переулок 5</option>';
+            address_options_str  += '<option value="Черемошинский переулок 6">Черемошинский переулок 6</option>';
+            address_options_str  += '<option value="Черемошинский переулок 6А">Черемошинский переулок 6А</option>';
+            address_options_str  += '<option value="Черемошинский переулок 7">Черемошинский переулок 7</option>';
+            address_options_str  += '<option value="Черемошинский переулок 8">Черемошинский переулок 8</option>';
+            address_options_str  += '<option value="Черемошинский переулок 8А">Черемошинский переулок 8А</option>';
+            address_options_str  += '<option value="Черемошинский переулок 8Б">Черемошинский переулок 8Б</option>';
+            address_options_str  += '<option value="Черемошинский переулок 9">Черемошинский переулок 9</option>';
+            address_options_str  += '<option value="Шпальная улица 1">Шпальная улица 1</option>';
+            address_options_str  += '<option value="Шпальная улица 10">Шпальная улица 10</option>';
+            address_options_str  += '<option value="Шпальная улица 11">Шпальная улица 11</option>';
+            address_options_str  += '<option value="Шпальная улица 12">Шпальная улица 12</option>';
+            address_options_str  += '<option value="Шпальная улица 13">Шпальная улица 13</option>';
+            address_options_str  += '<option value="Шпальная улица 14">Шпальная улица 14</option>';
+            address_options_str  += '<option value="Шпальная улица 15">Шпальная улица 15</option>';
+            address_options_str  += '<option value="Шпальная улица 16">Шпальная улица 16</option>';
+            address_options_str  += '<option value="Шпальная улица 16А">Шпальная улица 16А</option>';
+            address_options_str  += '<option value="Шпальная улица 16Б">Шпальная улица 16Б</option>';
+            address_options_str  += '<option value="Шпальная улица 17">Шпальная улица 17</option>';
+            address_options_str  += '<option value="Шпальная улица 18">Шпальная улица 18</option>';
+            address_options_str  += '<option value="Шпальная улица 18А">Шпальная улица 18А</option>';
+            address_options_str  += '<option value="Шпальная улица 19">Шпальная улица 19</option>';
+            address_options_str  += '<option value="Шпальная улица 2">Шпальная улица 2</option>';
+            address_options_str  += '<option value="Шпальная улица 20">Шпальная улица 20</option>';
+            address_options_str  += '<option value="Шпальная улица 21">Шпальная улица 21</option>';
+            address_options_str  += '<option value="Шпальная улица 22">Шпальная улица 22</option>';
+            address_options_str  += '<option value="Шпальная улица 23">Шпальная улица 23</option>';
+            address_options_str  += '<option value="Шпальная улица 24">Шпальная улица 24</option>';
+            address_options_str  += '<option value="Шпальная улица 25">Шпальная улица 25</option>';
+            address_options_str  += '<option value="Шпальная улица 26">Шпальная улица 26</option>';
+            address_options_str  += '<option value="Шпальная улица 30">Шпальная улица 30</option>';
+            address_options_str  += '<option value="Шпальная улица 4">Шпальная улица 4</option>';
+            address_options_str  += '<option value="Шпальная улица 4А">Шпальная улица 4А</option>';
+            address_options_str  += '<option value="Шпальная улица 5">Шпальная улица 5</option>';
+            address_options_str  += '<option value="Шпальная улица 6">Шпальная улица 6</option>';
+            address_options_str  += '<option value="Шпальная улица 7">Шпальная улица 7</option>';
+            address_options_str  += '<option value="Шпальная улица 8">Шпальная улица 8</option>';
+            address_options_str  += '<option value="Шпальная улица 9">Шпальная улица 9</option>';
+            address_options_str  += '<option value="Шпальный переулок 10">Шпальный переулок 10</option>';
+            address_options_str  += '<option value="Шпальный переулок 2">Шпальный переулок 2</option>';
+            address_options_str  += '<option value="Шпальный переулок 3">Шпальный переулок 3</option>';
+            address_options_str  += '<option value="Шпальный переулок 4">Шпальный переулок 4</option>';
+            address_options_str  += '<option value="Шпальный переулок 5">Шпальный переулок 5</option>';
+            address_options_str  += '<option value="Шпальный переулок 6">Шпальный переулок 6</option>';
+            address_options_str  += '<option value="Шпальный переулок 7">Шпальный переулок 7</option>';
+            address_options_str  += '<option value="Шпальный переулок 8">Шпальный переулок 8</option>';
+            address_options_str  += '<option value="набережная Озера 14">набережная Озера 14</option>';
+            address_options_str  += '<option value="набережная Озера 14А">набережная Озера 14А</option>';
+            address_options_str  += '<option value="набережная Озера 22">набережная Озера 22</option>';
+            address_options_str  += '<option value="набережная Озера 26">набережная Озера 26</option>';
+            address_options_str  += '<option value="набережная Озера 33/1">набережная Озера 33/1</option>';
+            address_options_str  += '<option value="набережная Озера 33Б">набережная Озера 33Б</option>';
+            address_options_str  += '<option value="набережная Озера 5">набережная Озера 5</option>';
+            address_options_str  += '<option value="переулок Войкова 1">переулок Войкова 1</option>';
+            address_options_str  += '<option value="переулок Войкова 2А">переулок Войкова 2А</option>';
+            address_options_str  += '<option value="переулок Войкова 3">переулок Войкова 3</option>';
+            address_options_str  += '<option value="переулок Войкова 4">переулок Войкова 4</option>';
+            address_options_str  += '<option value="переулок Добролюбова 1">переулок Добролюбова 1</option>';
+            address_options_str  += '<option value="переулок Добролюбова 10">переулок Добролюбова 10</option>';
+            address_options_str  += '<option value="переулок Добролюбова 10 с1">переулок Добролюбова 10 с1</option>';
+            address_options_str  += '<option value="переулок Добролюбова 10 с2">переулок Добролюбова 10 с2</option>';
+            address_options_str  += '<option value="переулок Добролюбова 10 с3">переулок Добролюбова 10 с3</option>';
+            address_options_str  += '<option value="переулок Добролюбова 10/1">переулок Добролюбова 10/1</option>';
+            address_options_str  += '<option value="переулок Добролюбова 10/2">переулок Добролюбова 10/2</option>';
+            address_options_str  += '<option value="переулок Добролюбова 11">переулок Добролюбова 11</option>';
+            address_options_str  += '<option value="переулок Добролюбова 15 с1">переулок Добролюбова 15 с1</option>';
+            address_options_str  += '<option value="переулок Добролюбова 3">переулок Добролюбова 3</option>';
+            address_options_str  += '<option value="переулок Добролюбова 4">переулок Добролюбова 4</option>';
+            address_options_str  += '<option value="переулок Добролюбова 5">переулок Добролюбова 5</option>';
+            address_options_str  += '<option value="переулок Добролюбова 6">переулок Добролюбова 6</option>';
+            address_options_str  += '<option value="переулок Добролюбова 7">переулок Добролюбова 7</option>';
+            address_options_str  += '<option value="переулок Добролюбова 8">переулок Добролюбова 8</option>';
+            address_options_str  += '<option value="переулок Добролюбова 9">переулок Добролюбова 9</option>';
+            address_options_str  += '<option value="переулок Емельяна Пугачёва 1">переулок Емельяна Пугачёва 1</option>';
+            address_options_str  += '<option value="переулок Емельяна Пугачёва 11">переулок Емельяна Пугачёва 11</option>';
+            address_options_str  += '<option value="переулок Емельяна Пугачёва 12">переулок Емельяна Пугачёва 12</option>';
+            address_options_str  += '<option value="переулок Емельяна Пугачёва 16">переулок Емельяна Пугачёва 16</option>';
+            address_options_str  += '<option value="переулок Емельяна Пугачёва 18">переулок Емельяна Пугачёва 18</option>';
+            address_options_str  += '<option value="переулок Емельяна Пугачёва 20">переулок Емельяна Пугачёва 20</option>';
+            address_options_str  += '<option value="переулок Емельяна Пугачёва 3">переулок Емельяна Пугачёва 3</option>';
+            address_options_str  += '<option value="переулок Емельяна Пугачёва 4">переулок Емельяна Пугачёва 4</option>';
+            address_options_str  += '<option value="переулок Емельяна Пугачёва 5">переулок Емельяна Пугачёва 5</option>';
+            address_options_str  += '<option value="переулок Емельяна Пугачёва 7">переулок Емельяна Пугачёва 7</option>';
+            address_options_str  += '<option value="переулок Емельяна Пугачёва 8">переулок Емельяна Пугачёва 8</option>';
+            address_options_str  += '<option value="переулок Емельяна Пугачёва 9">переулок Емельяна Пугачёва 9</option>';
+            address_options_str  += '<option value="переулок Островского 5">переулок Островского 5</option>';
+            address_options_str  += '<option value="переулок Островского 7">переулок Островского 7</option>';
+            address_options_str  += '<option value="переулок Островского 8">переулок Островского 8</option>';
+            address_options_str  += '<option value="переулок Сакко 1">переулок Сакко 1</option>';
+            address_options_str  += '<option value="переулок Сакко 12">переулок Сакко 12</option>';
+            address_options_str  += '<option value="переулок Сакко 16">переулок Сакко 16</option>';
+            address_options_str  += '<option value="переулок Сакко 1А">переулок Сакко 1А</option>';
+            address_options_str  += '<option value="переулок Сакко 2">переулок Сакко 2</option>';
+            address_options_str  += '<option value="переулок Сакко 2 с7">переулок Сакко 2 с7</option>';
+            address_options_str  += '<option value="переулок Сакко 3">переулок Сакко 3</option>';
+            address_options_str  += '<option value="переулок Сакко 4">переулок Сакко 4</option>';
+            address_options_str  += '<option value="переулок Сакко 5">переулок Сакко 5</option>';
+            address_options_str  += '<option value="переулок Сакко 6">переулок Сакко 6</option>';
+            address_options_str  += '<option value="переулок Сакко 9">переулок Сакко 9</option>';
+            address_options_str  += '<option value="переулок Успенского 2">переулок Успенского 2</option>';
+            address_options_str  += '<option value="переулок Успенского 4">переулок Успенского 4</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 12">посёлок Мясокомбинат 12</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 13">посёлок Мясокомбинат 13</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 14">посёлок Мясокомбинат 14</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 15">посёлок Мясокомбинат 15</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 15А">посёлок Мясокомбинат 15А</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 15В">посёлок Мясокомбинат 15В</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 16">посёлок Мясокомбинат 16</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 17">посёлок Мясокомбинат 17</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 18">посёлок Мясокомбинат 18</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 2">посёлок Мясокомбинат 2</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 24">посёлок Мясокомбинат 24</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 29">посёлок Мясокомбинат 29</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 29А">посёлок Мясокомбинат 29А</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 29Д">посёлок Мясокомбинат 29Д</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 2А">посёлок Мясокомбинат 2А</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 3">посёлок Мясокомбинат 3</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 33">посёлок Мясокомбинат 33</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 35">посёлок Мясокомбинат 35</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 37">посёлок Мясокомбинат 37</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 38">посёлок Мясокомбинат 38</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 39/1">посёлок Мясокомбинат 39/1</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 39Б">посёлок Мясокомбинат 39Б</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 3А">посёлок Мясокомбинат 3А</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 3В">посёлок Мясокомбинат 3В</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 4">посёлок Мясокомбинат 4</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 42А">посёлок Мясокомбинат 42А</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 43">посёлок Мясокомбинат 43</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 44">посёлок Мясокомбинат 44</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 46">посёлок Мясокомбинат 46</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 47">посёлок Мясокомбинат 47</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 4А">посёлок Мясокомбинат 4А</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 5">посёлок Мясокомбинат 5</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 50">посёлок Мясокомбинат 50</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 51">посёлок Мясокомбинат 51</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 51/2">посёлок Мясокомбинат 51/2</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 53">посёлок Мясокомбинат 53</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 54">посёлок Мясокомбинат 54</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 55">посёлок Мясокомбинат 55</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 59">посёлок Мясокомбинат 59</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 5А">посёлок Мясокомбинат 5А</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 5Б">посёлок Мясокомбинат 5Б</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 5В">посёлок Мясокомбинат 5В</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 64/1">посёлок Мясокомбинат 64/1</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 65">посёлок Мясокомбинат 65</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 66">посёлок Мясокомбинат 66</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 67">посёлок Мясокомбинат 67</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 68">посёлок Мясокомбинат 68</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 69">посёлок Мясокомбинат 69</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 7">посёлок Мясокомбинат 7</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 70">посёлок Мясокомбинат 70</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 71/2">посёлок Мясокомбинат 71/2</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 72">посёлок Мясокомбинат 72</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 72А">посёлок Мясокомбинат 72А</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 73">посёлок Мясокомбинат 73</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 74">посёлок Мясокомбинат 74</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 75">посёлок Мясокомбинат 75</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 75А">посёлок Мясокомбинат 75А</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 75Б">посёлок Мясокомбинат 75Б</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 75В">посёлок Мясокомбинат 75В</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 76/1">посёлок Мясокомбинат 76/1</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 77">посёлок Мясокомбинат 77</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 77А">посёлок Мясокомбинат 77А</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 79">посёлок Мясокомбинат 79</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 79А">посёлок Мясокомбинат 79А</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 8">посёлок Мясокомбинат 8</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 8/1">посёлок Мясокомбинат 8/1</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 80">посёлок Мясокомбинат 80</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 82">посёлок Мясокомбинат 82</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 82А">посёлок Мясокомбинат 82А</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 85">посёлок Мясокомбинат 85</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 87">посёлок Мясокомбинат 87</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 9">посёлок Мясокомбинат 9</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 91">посёлок Мясокомбинат 91</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 92">посёлок Мясокомбинат 92</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 92А">посёлок Мясокомбинат 92А</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 93">посёлок Мясокомбинат 93</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 93А">посёлок Мясокомбинат 93А</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 94">посёлок Мясокомбинат 94</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 98">посёлок Мясокомбинат 98</option>';
+            address_options_str  += '<option value="посёлок Мясокомбинат 98/1">посёлок Мясокомбинат 98/1</option>';
+            address_options_str  += '<option value="проспект Ленина 122">проспект Ленина 122</option>';
+            address_options_str  += '<option value="проспект Ленина 122/1">проспект Ленина 122/1</option>';
+            address_options_str  += '<option value="проспект Ленина 124">проспект Ленина 124</option>';
+            address_options_str  += '<option value="проспект Ленина 124/1">проспект Ленина 124/1</option>';
+            address_options_str  += '<option value="проспект Ленина 126">проспект Ленина 126</option>';
+            address_options_str  += '<option value="проспект Ленина 128/1">проспект Ленина 128/1</option>';
+            address_options_str  += '<option value="проспект Ленина 132А">проспект Ленина 132А</option>';
+            address_options_str  += '<option value="проспект Ленина 134/1">проспект Ленина 134/1</option>';
+            address_options_str  += '<option value="проспект Ленина 134А">проспект Ленина 134А</option>';
+            address_options_str  += '<option value="проспект Ленина 136А">проспект Ленина 136А</option>';
+            address_options_str  += '<option value="проспект Ленина 138">проспект Ленина 138</option>';
+            address_options_str  += '<option value="проспект Ленина 138А">проспект Ленина 138А</option>';
+            address_options_str  += '<option value="проспект Ленина 144А">проспект Ленина 144А</option>';
+            address_options_str  += '<option value="проспект Ленина 148">проспект Ленина 148</option>';
+            address_options_str  += '<option value="проспект Ленина 150">проспект Ленина 150</option>';
+            address_options_str  += '<option value="проспект Ленина 150А">проспект Ленина 150А</option>';
+            address_options_str  += '<option value="проспект Ленина 150Б">проспект Ленина 150Б</option>';
+            address_options_str  += '<option value="проспект Ленина 152">проспект Ленина 152</option>';
+            address_options_str  += '<option value="проспект Ленина 152/1">проспект Ленина 152/1</option>';
+            address_options_str  += '<option value="проспект Ленина 152А">проспект Ленина 152А</option>';
+            address_options_str  += '<option value="проспект Ленина 156">проспект Ленина 156</option>';
+            address_options_str  += '<option value="проспект Ленина 157">проспект Ленина 157</option>';
+            address_options_str  += '<option value="проспект Ленина 159">проспект Ленина 159</option>';
+            address_options_str  += '<option value="проспект Ленина 160">проспект Ленина 160</option>';
+            address_options_str  += '<option value="проспект Ленина 161А">проспект Ленина 161А</option>';
+            address_options_str  += '<option value="проспект Ленина 162">проспект Ленина 162</option>';
+            address_options_str  += '<option value="проспект Ленина 163">проспект Ленина 163</option>';
+            address_options_str  += '<option value="проспект Ленина 163А">проспект Ленина 163А</option>';
+            address_options_str  += '<option value="проспект Ленина 165">проспект Ленина 165</option>';
+            address_options_str  += '<option value="проспект Ленина 166">проспект Ленина 166</option>';
+            address_options_str  += '<option value="проспект Ленина 167">проспект Ленина 167</option>';
+            address_options_str  += '<option value="проспект Ленина 169">проспект Ленина 169</option>';
+            address_options_str  += '<option value="проспект Ленина 173">проспект Ленина 173</option>';
+            address_options_str  += '<option value="проспект Ленина 174">проспект Ленина 174</option>';
+            address_options_str  += '<option value="проспект Ленина 174А">проспект Ленина 174А</option>';
+            address_options_str  += '<option value="проспект Ленина 177">проспект Ленина 177</option>';
+            address_options_str  += '<option value="проспект Ленина 177А">проспект Ленина 177А</option>';
+            address_options_str  += '<option value="проспект Ленина 179">проспект Ленина 179</option>';
+            address_options_str  += '<option value="проспект Ленина 179 с1">проспект Ленина 179 с1</option>';
+            address_options_str  += '<option value="проспект Ленина 179 с4">проспект Ленина 179 с4</option>';
+            address_options_str  += '<option value="проспект Ленина 179 с5">проспект Ленина 179 с5</option>';
+            address_options_str  += '<option value="проспект Ленина 180">проспект Ленина 180</option>';
+            address_options_str  += '<option value="проспект Ленина 181">проспект Ленина 181</option>';
+            address_options_str  += '<option value="проспект Ленина 181 с1">проспект Ленина 181 с1</option>';
+            address_options_str  += '<option value="проспект Ленина 185">проспект Ленина 185</option>';
+            address_options_str  += '<option value="проспект Ленина 185/2">проспект Ленина 185/2</option>';
+            address_options_str  += '<option value="проспект Ленина 186">проспект Ленина 186</option>';
+            address_options_str  += '<option value="проспект Ленина 189">проспект Ленина 189</option>';
+            address_options_str  += '<option value="проспект Ленина 189/1">проспект Ленина 189/1</option>';
+            address_options_str  += '<option value="проспект Ленина 190">проспект Ленина 190</option>';
+            address_options_str  += '<option value="проспект Ленина 190 с2">проспект Ленина 190 с2</option>';
+            address_options_str  += '<option value="проспект Ленина 190 с3">проспект Ленина 190 с3</option>';
+            address_options_str  += '<option value="проспект Ленина 190 с4">проспект Ленина 190 с4</option>';
+            address_options_str  += '<option value="проспект Ленина 191">проспект Ленина 191</option>';
+            address_options_str  += '<option value="проспект Ленина 193">проспект Ленина 193</option>';
+            address_options_str  += '<option value="проспект Ленина 193 с2">проспект Ленина 193 с2</option>';
+            address_options_str  += '<option value="проспект Ленина 193/1">проспект Ленина 193/1</option>';
+            address_options_str  += '<option value="проспект Ленина 193А">проспект Ленина 193А</option>';
+            address_options_str  += '<option value="проспект Ленина 194">проспект Ленина 194</option>';
+            address_options_str  += '<option value="проспект Ленина 195">проспект Ленина 195</option>';
+            address_options_str  += '<option value="проспект Ленина 196">проспект Ленина 196</option>';
+            address_options_str  += '<option value="проспект Ленина 198">проспект Ленина 198</option>';
+            address_options_str  += '<option value="проспект Ленина 199">проспект Ленина 199</option>';
+            address_options_str  += '<option value="проспект Ленина 200">проспект Ленина 200</option>';
+            address_options_str  += '<option value="проспект Ленина 200/4">проспект Ленина 200/4</option>';
+            address_options_str  += '<option value="проспект Ленина 202">проспект Ленина 202</option>';
+            address_options_str  += '<option value="проспект Ленина 202А">проспект Ленина 202А</option>';
+            address_options_str  += '<option value="проспект Ленина 204">проспект Ленина 204</option>';
+            address_options_str  += '<option value="проспект Ленина 204А">проспект Ленина 204А</option>';
+            address_options_str  += '<option value="проспект Ленина 206">проспект Ленина 206</option>';
+            address_options_str  += '<option value="проспект Ленина 206А">проспект Ленина 206А</option>';
+            address_options_str  += '<option value="проспект Ленина 206Б">проспект Ленина 206Б</option>';
+            address_options_str  += '<option value="проспект Ленина 206В">проспект Ленина 206В</option>';
+            address_options_str  += '<option value="проспект Ленина 207">проспект Ленина 207</option>';
+            address_options_str  += '<option value="проспект Ленина 207А">проспект Ленина 207А</option>';
+            address_options_str  += '<option value="проспект Ленина 208">проспект Ленина 208</option>';
+            address_options_str  += '<option value="проспект Ленина 208А">проспект Ленина 208А</option>';
+            address_options_str  += '<option value="проспект Ленина 208Б">проспект Ленина 208Б</option>';
+            address_options_str  += '<option value="проспект Ленина 210">проспект Ленина 210</option>';
+            address_options_str  += '<option value="проспект Ленина 210А">проспект Ленина 210А</option>';
+            address_options_str  += '<option value="проспект Ленина 210В">проспект Ленина 210В</option>';
+            address_options_str  += '<option value="проспект Ленина 211">проспект Ленина 211</option>';
+            address_options_str  += '<option value="проспект Ленина 212">проспект Ленина 212</option>';
+            address_options_str  += '<option value="проспект Ленина 212А">проспект Ленина 212А</option>';
+            address_options_str  += '<option value="проспект Ленина 214">проспект Ленина 214</option>';
+            address_options_str  += '<option value="проспект Ленина 215">проспект Ленина 215</option>';
+            address_options_str  += '<option value="проспект Ленина 215 с1">проспект Ленина 215 с1</option>';
+            address_options_str  += '<option value="проспект Ленина 215/1">проспект Ленина 215/1</option>';
+            address_options_str  += '<option value="проспект Ленина 215А">проспект Ленина 215А</option>';
+            address_options_str  += '<option value="проспект Ленина 216">проспект Ленина 216</option>';
+            address_options_str  += '<option value="проспект Ленина 217">проспект Ленина 217</option>';
+            address_options_str  += '<option value="проспект Ленина 217 с1">проспект Ленина 217 с1</option>';
+            address_options_str  += '<option value="проспект Ленина 217 с2">проспект Ленина 217 с2</option>';
+            address_options_str  += '<option value="проспект Ленина 217 с30">проспект Ленина 217 с30</option>';
+            address_options_str  += '<option value="проспект Ленина 217/1">проспект Ленина 217/1</option>';
+            address_options_str  += '<option value="проспект Ленина 217/5">проспект Ленина 217/5</option>';
+            address_options_str  += '<option value="проспект Ленина 217А">проспект Ленина 217А</option>';
+            address_options_str  += '<option value="проспект Ленина 217Б">проспект Ленина 217Б</option>';
+            address_options_str  += '<option value="проспект Ленина 218">проспект Ленина 218</option>';
+            address_options_str  += '<option value="проспект Ленина 219/2">проспект Ленина 219/2</option>';
+            address_options_str  += '<option value="проспект Ленина 220">проспект Ленина 220</option>';
+            address_options_str  += '<option value="проспект Ленина 222">проспект Ленина 222</option>';
+            address_options_str  += '<option value="проспект Ленина 222А">проспект Ленина 222А</option>';
+            address_options_str  += '<option value="проспект Ленина 224">проспект Ленина 224</option>';
+            address_options_str  += '<option value="проспект Ленина 225">проспект Ленина 225</option>';
+            address_options_str  += '<option value="проспект Ленина 225 с1">проспект Ленина 225 с1</option>';
+            address_options_str  += '<option value="проспект Ленина 225 с2">проспект Ленина 225 с2</option>';
+            address_options_str  += '<option value="проспект Ленина 225 с3">проспект Ленина 225 с3</option>';
+            address_options_str  += '<option value="проспект Ленина 229">проспект Ленина 229</option>';
+            address_options_str  += '<option value="проспект Ленина 230">проспект Ленина 230</option>';
+            address_options_str  += '<option value="проспект Ленина 230 с1">проспект Ленина 230 с1</option>';
+            address_options_str  += '<option value="проспект Ленина 230А">проспект Ленина 230А</option>';
+            address_options_str  += '<option value="проспект Ленина 231">проспект Ленина 231</option>';
+            address_options_str  += '<option value="проспект Ленина 232">проспект Ленина 232</option>';
+            address_options_str  += '<option value="проспект Ленина 234">проспект Ленина 234</option>';
+            address_options_str  += '<option value="проспект Ленина 235">проспект Ленина 235</option>';
+            address_options_str  += '<option value="проспект Ленина 236">проспект Ленина 236</option>';
+            address_options_str  += '<option value="проспект Ленина 237">проспект Ленина 237</option>';
+            address_options_str  += '<option value="проспект Ленина 238">проспект Ленина 238</option>';
+            address_options_str  += '<option value="проспект Ленина 238 с1">проспект Ленина 238 с1</option>';
+            address_options_str  += '<option value="проспект Ленина 239">проспект Ленина 239</option>';
+            address_options_str  += '<option value="проспект Ленина 239А">проспект Ленина 239А</option>';
+            address_options_str  += '<option value="проспект Ленина 240">проспект Ленина 240</option>';
+            address_options_str  += '<option value="проспект Ленина 241">проспект Ленина 241</option>';
+            address_options_str  += '<option value="проспект Ленина 242">проспект Ленина 242</option>';
+            address_options_str  += '<option value="проспект Ленина 243">проспект Ленина 243</option>';
+            address_options_str  += '<option value="проспект Ленина 243/1">проспект Ленина 243/1</option>';
+            address_options_str  += '<option value="проспект Ленина 243/2">проспект Ленина 243/2</option>';
+            address_options_str  += '<option value="проспект Ленина 244">проспект Ленина 244</option>';
+            address_options_str  += '<option value="проспект Ленина 245">проспект Ленина 245</option>';
+            address_options_str  += '<option value="проспект Ленина 246">проспект Ленина 246</option>';
+            address_options_str  += '<option value="проспект Ленина 248">проспект Ленина 248</option>';
+            address_options_str  += '<option value="проспект Ленина 250">проспект Ленина 250</option>';
+            address_options_str  += '<option value="проспект Ленина 252">проспект Ленина 252</option>';
+            address_options_str  += '<option value="проспект Ленина 254">проспект Ленина 254</option>';
+            address_options_str  += '<option value="проспект Ленина 254А">проспект Ленина 254А</option>';
+            address_options_str  += '<option value="проспект Ленина 255">проспект Ленина 255</option>';
+            address_options_str  += '<option value="проспект Ленина 256">проспект Ленина 256</option>';
+            address_options_str  += '<option value="проспект Ленина 257">проспект Ленина 257</option>';
+            address_options_str  += '<option value="проспект Ленина 258">проспект Ленина 258</option>';
+            address_options_str  += '<option value="проспект Ленина 258А">проспект Ленина 258А</option>';
+            address_options_str  += '<option value="проспект Ленина 259">проспект Ленина 259</option>';
+            address_options_str  += '<option value="проспект Ленина 261">проспект Ленина 261</option>';
+            address_options_str  += '<option value="проспект Ленина 262/2">проспект Ленина 262/2</option>';
+            address_options_str  += '<option value="проспект Ленина 262А">проспект Ленина 262А</option>';
+            address_options_str  += '<option value="проспект Ленина 263">проспект Ленина 263</option>';
+            address_options_str  += '<option value="проспект Ленина 271">проспект Ленина 271</option>';
+            address_options_str  += '<option value="проспект Ленина 279">проспект Ленина 279</option>';
+            address_options_str  += '<option value="проспект Ленина 283">проспект Ленина 283</option>';
+            address_options_str  += '<option value="улица 5-й Армии 1">улица 5-й Армии 1</option>';
+            address_options_str  += '<option value="улица 5-й Армии 10">улица 5-й Армии 10</option>';
+            address_options_str  += '<option value="улица 5-й Армии 10А">улица 5-й Армии 10А</option>';
+            address_options_str  += '<option value="улица 5-й Армии 11">улица 5-й Армии 11</option>';
+            address_options_str  += '<option value="улица 5-й Армии 11А">улица 5-й Армии 11А</option>';
+            address_options_str  += '<option value="улица 5-й Армии 12">улица 5-й Армии 12</option>';
+            address_options_str  += '<option value="улица 5-й Армии 13">улица 5-й Армии 13</option>';
+            address_options_str  += '<option value="улица 5-й Армии 13А">улица 5-й Армии 13А</option>';
+            address_options_str  += '<option value="улица 5-й Армии 13Б">улица 5-й Армии 13Б</option>';
+            address_options_str  += '<option value="улица 5-й Армии 14">улица 5-й Армии 14</option>';
+            address_options_str  += '<option value="улица 5-й Армии 15">улица 5-й Армии 15</option>';
+            address_options_str  += '<option value="улица 5-й Армии 15 с1">улица 5-й Армии 15 с1</option>';
+            address_options_str  += '<option value="улица 5-й Армии 16">улица 5-й Армии 16</option>';
+            address_options_str  += '<option value="улица 5-й Армии 18">улица 5-й Армии 18</option>';
+            address_options_str  += '<option value="улица 5-й Армии 18А">улица 5-й Армии 18А</option>';
+            address_options_str  += '<option value="улица 5-й Армии 20">улица 5-й Армии 20</option>';
+            address_options_str  += '<option value="улица 5-й Армии 20 с4">улица 5-й Армии 20 с4</option>';
+            address_options_str  += '<option value="улица 5-й Армии 20А">улица 5-й Армии 20А</option>';
+            address_options_str  += '<option value="улица 5-й Армии 22">улица 5-й Армии 22</option>';
+            address_options_str  += '<option value="улица 5-й Армии 24">улица 5-й Армии 24</option>';
+            address_options_str  += '<option value="улица 5-й Армии 25">улица 5-й Армии 25</option>';
+            address_options_str  += '<option value="улица 5-й Армии 26">улица 5-й Армии 26</option>';
+            address_options_str  += '<option value="улица 5-й Армии 28">улица 5-й Армии 28</option>';
+            address_options_str  += '<option value="улица 5-й Армии 28/1">улица 5-й Армии 28/1</option>';
+            address_options_str  += '<option value="улица 5-й Армии 28/2">улица 5-й Армии 28/2</option>';
+            address_options_str  += '<option value="улица 5-й Армии 29">улица 5-й Армии 29</option>';
+            address_options_str  += '<option value="улица 5-й Армии 29 с1">улица 5-й Армии 29 с1</option>';
+            address_options_str  += '<option value="улица 5-й Армии 29/1">улица 5-й Армии 29/1</option>';
+            address_options_str  += '<option value="улица 5-й Армии 29/2">улица 5-й Армии 29/2</option>';
+            address_options_str  += '<option value="улица 5-й Армии 29/3">улица 5-й Армии 29/3</option>';
+            address_options_str  += '<option value="улица 5-й Армии 29А">улица 5-й Армии 29А</option>';
+            address_options_str  += '<option value="улица 5-й Армии 3">улица 5-й Армии 3</option>';
+            address_options_str  += '<option value="улица 5-й Армии 3/1">улица 5-й Армии 3/1</option>';
+            address_options_str  += '<option value="улица 5-й Армии 3/1 с3">улица 5-й Армии 3/1 с3</option>';
+            address_options_str  += '<option value="улица 5-й Армии 3/2">улица 5-й Армии 3/2</option>';
+            address_options_str  += '<option value="улица 5-й Армии 36">улица 5-й Армии 36</option>';
+            address_options_str  += '<option value="улица 5-й Армии 4">улица 5-й Армии 4</option>';
+            address_options_str  += '<option value="улица 5-й Армии 5">улица 5-й Армии 5</option>';
+            address_options_str  += '<option value="улица 5-й Армии 5/1">улица 5-й Армии 5/1</option>';
+            address_options_str  += '<option value="улица 5-й Армии 5А">улица 5-й Армии 5А</option>';
+            address_options_str  += '<option value="улица 5-й Армии 6">улица 5-й Армии 6</option>';
+            address_options_str  += '<option value="улица 5-й Армии 7">улица 5-й Армии 7</option>';
+            address_options_str  += '<option value="улица 5-й Армии 8">улица 5-й Армии 8</option>';
+            address_options_str  += '<option value="улица 5-й Армии 9">улица 5-й Армии 9</option>';
+            address_options_str  += '<option value="улица 5-й Армии 9А">улица 5-й Армии 9А</option>';
+            address_options_str  += '<option value="улица 5-й Армии 9Б">улица 5-й Армии 9Б</option>';
+            address_options_str  += '<option value="улица Войкова 12">улица Войкова 12</option>';
+            address_options_str  += '<option value="улица Войкова 13">улица Войкова 13</option>';
+            address_options_str  += '<option value="улица Войкова 13/1">улица Войкова 13/1</option>';
+            address_options_str  += '<option value="улица Войкова 13А">улица Войкова 13А</option>';
+            address_options_str  += '<option value="улица Войкова 14">улица Войкова 14</option>';
+            address_options_str  += '<option value="улица Войкова 15">улица Войкова 15</option>';
+            address_options_str  += '<option value="улица Войкова 15А">улица Войкова 15А</option>';
+            address_options_str  += '<option value="улица Войкова 16">улица Войкова 16</option>';
+            address_options_str  += '<option value="улица Войкова 16/1">улица Войкова 16/1</option>';
+            address_options_str  += '<option value="улица Войкова 18">улица Войкова 18</option>';
+            address_options_str  += '<option value="улица Войкова 20">улица Войкова 20</option>';
+            address_options_str  += '<option value="улица Войкова 21">улица Войкова 21</option>';
+            address_options_str  += '<option value="улица Войкова 22">улица Войкова 22</option>';
+            address_options_str  += '<option value="улица Войкова 23">улица Войкова 23</option>';
+            address_options_str  += '<option value="улица Войкова 25">улица Войкова 25</option>';
+            address_options_str  += '<option value="улица Войкова 27">улица Войкова 27</option>';
+            address_options_str  += '<option value="улица Войкова 27 с1">улица Войкова 27 с1</option>';
+            address_options_str  += '<option value="улица Войкова 27 с9">улица Войкова 27 с9</option>';
+            address_options_str  += '<option value="улица Войкова 27А с1">улица Войкова 27А с1</option>';
+            address_options_str  += '<option value="улица Войкова 29">улица Войкова 29</option>';
+            address_options_str  += '<option value="улица Войкова 32">улица Войкова 32</option>';
+            address_options_str  += '<option value="улица Войкова 34">улица Войкова 34</option>';
+            address_options_str  += '<option value="улица Войкова 35">улица Войкова 35</option>';
+            address_options_str  += '<option value="улица Войкова 36">улица Войкова 36</option>';
+            address_options_str  += '<option value="улица Войкова 37">улица Войкова 37</option>';
+            address_options_str  += '<option value="улица Войкова 38">улица Войкова 38</option>';
+            address_options_str  += '<option value="улица Войкова 39">улица Войкова 39</option>';
+            address_options_str  += '<option value="улица Войкова 40">улица Войкова 40</option>';
+            address_options_str  += '<option value="улица Войкова 43">улица Войкова 43</option>';
+            address_options_str  += '<option value="улица Войкова 43А">улица Войкова 43А</option>';
+            address_options_str  += '<option value="улица Войкова 45">улица Войкова 45</option>';
+            address_options_str  += '<option value="улица Войкова 47">улица Войкова 47</option>';
+            address_options_str  += '<option value="улица Войкова 47/1">улица Войкова 47/1</option>';
+            address_options_str  += '<option value="улица Войкова 47/2">улица Войкова 47/2</option>';
+            address_options_str  += '<option value="улица Войкова 49">улица Войкова 49</option>';
+            address_options_str  += '<option value="улица Войкова 51">улица Войкова 51</option>';
+            address_options_str  += '<option value="улица Войкова 51с6">улица Войкова 51с6</option>';
+            address_options_str  += '<option value="улица Войкова 51с7">улица Войкова 51с7</option>';
+            address_options_str  += '<option value="улица Войкова 53">улица Войкова 53</option>';
+            address_options_str  += '<option value="улица Войкова 55">улица Войкова 55</option>';
+            address_options_str  += '<option value="улица Войкова 57">улица Войкова 57</option>';
+            address_options_str  += '<option value="улица Войкова 58">улица Войкова 58</option>';
+            address_options_str  += '<option value="улица Войкова 58А">улица Войкова 58А</option>';
+            address_options_str  += '<option value="улица Войкова 59А">улица Войкова 59А</option>';
+            address_options_str  += '<option value="улица Войкова 60">улица Войкова 60</option>';
+            address_options_str  += '<option value="улица Войкова 61">улица Войкова 61</option>';
+            address_options_str  += '<option value="улица Войкова 62">улица Войкова 62</option>';
+            address_options_str  += '<option value="улица Войкова 64">улица Войкова 64</option>';
+            address_options_str  += '<option value="улица Войкова 64/1">улица Войкова 64/1</option>';
+            address_options_str  += '<option value="улица Войкова 68">улица Войкова 68</option>';
+            address_options_str  += '<option value="улица Войкова 68/1">улица Войкова 68/1</option>';
+            address_options_str  += '<option value="улица Войкова 70">улица Войкова 70</option>';
+            address_options_str  += '<option value="улица Войкова 75">улица Войкова 75</option>';
+            address_options_str  += '<option value="улица Войкова 75 с13">улица Войкова 75 с13</option>';
+            address_options_str  += '<option value="улица Войкова 75 с21">улица Войкова 75 с21</option>';
+            address_options_str  += '<option value="улица Войкова 75 с5">улица Войкова 75 с5</option>';
+            address_options_str  += '<option value="улица Войкова 75А">улица Войкова 75А</option>';
+            address_options_str  += '<option value="улица Войкова 78">улица Войкова 78</option>';
+            address_options_str  += '<option value="улица Войкова 82">улица Войкова 82</option>';
+            address_options_str  += '<option value="улица Войкова 82Б">улица Войкова 82Б</option>';
+            address_options_str  += '<option value="улица Войкова 84">улица Войкова 84</option>';
+            address_options_str  += '<option value="улица Войкова 84А">улица Войкова 84А</option>';
+            address_options_str  += '<option value="улица Войкова 84Б">улица Войкова 84Б</option>';
+            address_options_str  += '<option value="улица Войкова 86">улица Войкова 86</option>';
+            address_options_str  += '<option value="улица Героев Чубаровцев 2">улица Героев Чубаровцев 2</option>';
+            address_options_str  += '<option value="улица Героев Чубаровцев 2 с2">улица Героев Чубаровцев 2 с2</option>';
+            address_options_str  += '<option value="улица Героев Чубаровцев 2 с3">улица Героев Чубаровцев 2 с3</option>';
+            address_options_str  += '<option value="улица Героев Чубаровцев 2/2">улица Героев Чубаровцев 2/2</option>';
+            address_options_str  += '<option value="улица Героев Чубаровцев 2/3">улица Героев Чубаровцев 2/3</option>';
+            address_options_str  += '<option value="улица Героев Чубаровцев 2/4">улица Героев Чубаровцев 2/4</option>';
+            address_options_str  += '<option value="улица Карла Маркса 43А">улица Карла Маркса 43А</option>';
+            address_options_str  += '<option value="улица Карла Маркса 45">улица Карла Маркса 45</option>';
+            address_options_str  += '<option value="улица Карла Маркса 47">улица Карла Маркса 47</option>';
+            address_options_str  += '<option value="улица Карла Маркса 48">улица Карла Маркса 48</option>';
+            address_options_str  += '<option value="улица Карла Маркса 48 с11">улица Карла Маркса 48 с11</option>';
+            address_options_str  += '<option value="улица Карла Маркса 48 с2">улица Карла Маркса 48 с2</option>';
+            address_options_str  += '<option value="улица Карла Маркса 48 с20">улица Карла Маркса 48 с20</option>';
+            address_options_str  += '<option value="улица Карла Маркса 48 с3">улица Карла Маркса 48 с3</option>';
+            address_options_str  += '<option value="улица Карла Маркса 48/1">улица Карла Маркса 48/1</option>';
+            address_options_str  += '<option value="улица Карла Маркса 48/2">улица Карла Маркса 48/2</option>';
+            address_options_str  += '<option value="улица Карла Маркса 48/4">улица Карла Маркса 48/4</option>';
+            address_options_str  += '<option value="улица Карла Маркса 48В">улица Карла Маркса 48В</option>';
+            address_options_str  += '<option value="улица Карла Маркса 49">улица Карла Маркса 49</option>';
+            address_options_str  += '<option value="улица Карла Маркса 50">улица Карла Маркса 50</option>';
+            address_options_str  += '<option value="улица Карла Маркса 50/1">улица Карла Маркса 50/1</option>';
+            address_options_str  += '<option value="улица Карла Маркса 50/2">улица Карла Маркса 50/2</option>';
+            address_options_str  += '<option value="улица Карла Маркса 50/3">улица Карла Маркса 50/3</option>';
+            address_options_str  += '<option value="улица Карла Маркса 52">улица Карла Маркса 52</option>';
+            address_options_str  += '<option value="улица Карла Маркса 53">улица Карла Маркса 53</option>';
+            address_options_str  += '<option value="улица Карла Маркса 54">улица Карла Маркса 54</option>';
+            address_options_str  += '<option value="улица Карла Маркса 56">улица Карла Маркса 56</option>';
+            address_options_str  += '<option value="улица Карла Маркса 61">улица Карла Маркса 61</option>';
+            address_options_str  += '<option value="улица Карла Маркса 77">улица Карла Маркса 77</option>';
+            address_options_str  += '<option value="улица Карла Маркса 79">улица Карла Маркса 79</option>';
+            address_options_str  += '<option value="улица Карла Маркса 81">улица Карла Маркса 81</option>';
+            address_options_str  += '<option value="улица Карла Маркса 83">улица Карла Маркса 83</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 100">улица Розы Люксембург 100</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 101">улица Розы Люксембург 101</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 102">улица Розы Люксембург 102</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 102А">улица Розы Люксембург 102А</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 102А с2">улица Розы Люксембург 102А с2</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 103">улица Розы Люксембург 103</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 107">улица Розы Люксембург 107</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 107А">улица Розы Люксембург 107А</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 111">улица Розы Люксембург 111</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 111/1">улица Розы Люксембург 111/1</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 113">улица Розы Люксембург 113</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 115">улица Розы Люксембург 115</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 115 с1">улица Розы Люксембург 115 с1</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 115 с6">улица Розы Люксембург 115 с6</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 115/1">улица Розы Люксембург 115/1</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 115/4">улица Розы Люксембург 115/4</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 117">улица Розы Люксембург 117</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 119">улица Розы Люксембург 119</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 121">улица Розы Люксембург 121</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 123">улица Розы Люксембург 123</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 125">улица Розы Люксембург 125</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 129">улица Розы Люксембург 129</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 131">улица Розы Люксембург 131</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 133">улица Розы Люксембург 133</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 135">улица Розы Люксембург 135</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 137">улица Розы Люксембург 137</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 139">улица Розы Люксембург 139</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 141А">улица Розы Люксембург 141А</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 46">улица Розы Люксембург 46</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 46/1">улица Розы Люксембург 46/1</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 46/2">улица Розы Люксембург 46/2</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 46А">улица Розы Люксембург 46А</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 48">улица Розы Люксембург 48</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 48А">улица Розы Люксембург 48А</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 49">улица Розы Люксембург 49</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 50">улица Розы Люксембург 50</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 50А">улица Розы Люксембург 50А</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 52">улица Розы Люксембург 52</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 53">улица Розы Люксембург 53</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 55">улица Розы Люксембург 55</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 56">улица Розы Люксембург 56</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 56А">улица Розы Люксембург 56А</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 56А с1">улица Розы Люксембург 56А с1</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 58">улица Розы Люксембург 58</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 60">улица Розы Люксембург 60</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 61">улица Розы Люксембург 61</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 62">улица Розы Люксембург 62</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 62Б">улица Розы Люксембург 62Б</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 64">улица Розы Люксембург 64</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 65">улица Розы Люксембург 65</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 67">улица Розы Люксембург 67</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 67А">улица Розы Люксембург 67А</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 72">улица Розы Люксембург 72</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 72/1">улица Розы Люксембург 72/1</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 72/2">улица Розы Люксембург 72/2</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 73">улица Розы Люксембург 73</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 74">улица Розы Люксембург 74</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 76">улица Розы Люксембург 76</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 76/1">улица Розы Люксембург 76/1</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 78">улица Розы Люксембург 78</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 79">улица Розы Люксембург 79</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 80">улица Розы Люксембург 80</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 81">улица Розы Люксембург 81</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 86">улица Розы Люксембург 86</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 88">улица Розы Люксембург 88</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 88/1">улица Розы Люксембург 88/1</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 89">улица Розы Люксембург 89</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 90">улица Розы Люксембург 90</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 91">улица Розы Люксембург 91</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 92">улица Розы Люксембург 92</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 92А">улица Розы Люксембург 92А</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 93">улица Розы Люксембург 93</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 95">улица Розы Люксембург 95</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 96">улица Розы Люксембург 96</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 97">улица Розы Люксембург 97</option>';
+            address_options_str  += '<option value="улица Розы Люксембург 98">улица Розы Люксембург 98</option>';
+            address_options_str  += '<option value="улица Урицкого 13">улица Урицкого 13</option>';
+            address_options_str  += '<option value="улица Урицкого 19">улица Урицкого 19</option>';
+            address_options_str  += '<option value="улица Урицкого 2">улица Урицкого 2</option>';
+            address_options_str  += '<option value="улица Урицкого 22">улица Урицкого 22</option>';
+            address_options_str  += '<option value="улица Урицкого 23">улица Урицкого 23</option>';
+            address_options_str  += '<option value="улица Урицкого 24">улица Урицкого 24</option>';
+            address_options_str  += '<option value="улица Урицкого 25">улица Урицкого 25</option>';
+            address_options_str  += '<option value="улица Урицкого 28">улица Урицкого 28</option>';
+            address_options_str  += '<option value="улица Урицкого 33">улица Урицкого 33</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 10">улица Усть-Керепеть 10</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 100">улица Усть-Керепеть 100</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 102">улица Усть-Керепеть 102</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 104">улица Усть-Керепеть 104</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 104Г">улица Усть-Керепеть 104Г</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 105">улица Усть-Керепеть 105</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 106">улица Усть-Керепеть 106</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 108">улица Усть-Керепеть 108</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 109">улица Усть-Керепеть 109</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 110">улица Усть-Керепеть 110</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 112">улица Усть-Керепеть 112</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 113">улица Усть-Керепеть 113</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 114">улица Усть-Керепеть 114</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 115">улица Усть-Керепеть 115</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 115А">улица Усть-Керепеть 115А</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 116">улица Усть-Керепеть 116</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 117">улица Усть-Керепеть 117</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 118">улица Усть-Керепеть 118</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 12">улица Усть-Керепеть 12</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 120А">улица Усть-Керепеть 120А</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 123">улица Усть-Керепеть 123</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 123 с3">улица Усть-Керепеть 123 с3</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 123 с4">улица Усть-Керепеть 123 с4</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 13">улица Усть-Керепеть 13</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 14">улица Усть-Керепеть 14</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 15">улица Усть-Керепеть 15</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 16">улица Усть-Керепеть 16</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 17">улица Усть-Керепеть 17</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 18">улица Усть-Керепеть 18</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 19">улица Усть-Керепеть 19</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 20">улица Усть-Керепеть 20</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 21">улица Усть-Керепеть 21</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 22">улица Усть-Керепеть 22</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 23">улица Усть-Керепеть 23</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 24">улица Усть-Керепеть 24</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 25">улица Усть-Керепеть 25</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 26">улица Усть-Керепеть 26</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 27">улица Усть-Керепеть 27</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 28">улица Усть-Керепеть 28</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 29">улица Усть-Керепеть 29</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 30">улица Усть-Керепеть 30</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 32">улица Усть-Керепеть 32</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 32/1">улица Усть-Керепеть 32/1</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 33">улица Усть-Керепеть 33</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 34">улица Усть-Керепеть 34</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 36">улица Усть-Керепеть 36</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 36/1">улица Усть-Керепеть 36/1</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 37">улица Усть-Керепеть 37</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 38">улица Усть-Керепеть 38</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 4">улица Усть-Керепеть 4</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 41">улица Усть-Керепеть 41</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 42">улица Усть-Керепеть 42</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 47">улица Усть-Керепеть 47</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 51">улица Усть-Керепеть 51</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 55">улица Усть-Керепеть 55</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 57">улица Усть-Керепеть 57</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 59">улица Усть-Керепеть 59</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 6">улица Усть-Керепеть 6</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 60">улица Усть-Керепеть 60</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 61">улица Усть-Керепеть 61</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 61А">улица Усть-Керепеть 61А</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 62">улица Усть-Керепеть 62</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 62А">улица Усть-Керепеть 62А</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 64">улица Усть-Керепеть 64</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 65">улица Усть-Керепеть 65</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 70">улица Усть-Керепеть 70</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 8">улица Усть-Керепеть 8</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 80">улица Усть-Керепеть 80</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 82">улица Усть-Керепеть 82</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 84">улица Усть-Керепеть 84</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 88">улица Усть-Керепеть 88</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 89">улица Усть-Керепеть 89</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 9">улица Усть-Керепеть 9</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 90">улица Усть-Керепеть 90</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 91">улица Усть-Керепеть 91</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 92">улица Усть-Керепеть 92</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 92А">улица Усть-Керепеть 92А</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 93">улица Усть-Керепеть 93</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 94">улица Усть-Керепеть 94</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 95">улица Усть-Керепеть 95</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 96">улица Усть-Керепеть 96</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 97">улица Усть-Керепеть 97</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 98">улица Усть-Керепеть 98</option>';
+            address_options_str  += '<option value="улица Усть-Керепеть 99">улица Усть-Керепеть 99</option>';
+            address_options_str  += '<option value="улица Чапаева 10">улица Чапаева 10</option>';
+            address_options_str  += '<option value="улица Чапаева 12">улица Чапаева 12</option>';
+            address_options_str  += '<option value="улица Чапаева 13">улица Чапаева 13</option>';
+            address_options_str  += '<option value="улица Чапаева 14">улица Чапаева 14</option>';
+            address_options_str  += '<option value="улица Чапаева 15">улица Чапаева 15</option>';
+            address_options_str  += '<option value="улица Чапаева 20">улица Чапаева 20</option>';
+            address_options_str  += '<option value="улица Чапаева 4">улица Чапаева 4</option>';
+            address_options_str  += '<option value="улица Чапаева 6">улица Чапаева 6</option>';
+            address_options_str  += '<option value="улица Чапаева 8">улица Чапаева 8</option>';
+            sel_address.innerHTML = address_options_str;
+            div_address.appendChild(sel_address);
+            var lab_address = document.createElement('div');
+            lab_address.innerHTML = 'address';
+            lab_address.className = 'filterlabel';
+            div_address.appendChild(lab_address);
+            var reset_address = document.createElement('div');
+            reset_address.innerHTML = 'clear filter';
+            reset_address.className = 'filterlabel';
+            reset_address.onclick = function() {
+                var options = document.getElementById("sel_address").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_address.appendChild(reset_address);
+        </script>
+    </body>
+</html>
